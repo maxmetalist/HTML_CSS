@@ -9,7 +9,8 @@ readme = "README.md"
 requires-python = ">=3.13"
 dependencies = [
     "flask (>=3.1.1,<4.0.0)",
-    "requests (>=2.32.4,<3.0.0)"
+    "requests (>=2.32.4,<3.0.0)",
+    "django (>=5.2.4,<6.0.0)"
 ]
 
 
