@@ -9,6 +9,7 @@
         body {
             display: flex;
             min-height: 100vh;
+            margin: 0;
         }
         .sidebar {
             width: 25%;
@@ -29,56 +30,39 @@
         .sidebar a:hover {
             color: #ccc;
         }
-        .sidebar-nav {
-            margin-bottom: auto;
-        }
-        .sidebar-footer {
-            margin-top: auto;
-        }
         .content {
             width: 75%;
             padding: 20px;
             box-sizing: border-box;
         }
-        .contact-section {
-            margin-bottom: 2rem;
-        }
-        .contact-text {
-            font-size: 0.875rem;
-            color: #666;
-        }
-        .form-section {
-            background-color: #f8f9fa;
-            padding: 2rem;
-            border-radius: 0.5rem;
-        }
-        .contact-row {
+        .contact-container {
             display: flex;
             flex-wrap: wrap;
-            margin: 0 -15px;
+            gap: 20px;
+            margin-top: 20px;
         }
-        .contact-form-col {
-            padding: 0 15px;
-            order: 1;
-            flex: 0 0 50%;
-            max-width: 50%;
-            box-sizing: border-box;
+        .contact-form {
+            flex: 1;
+            min-width: 300px;
         }
-        .contact-text-col {
-            padding: 0 15px;
-            order: 2;
-            flex: 0 0 50%;
-            max-width: 50%;
-            box-sizing: border-box;
+        .contact-card {
+            flex: 1;
+            min-width: 300px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
         }
-        @media (max-width: 992px) {
-            .contact-form-col,
-            .contact-text-col {
-                flex: 0 0 100%;
-                max-width: 100%;
-            }
-            .contact-form-col {
-                margin-bottom: 2rem;
+        .contact-info {
+            margin-bottom: 15px;
+        }
+        .contact-info i {
+            margin-right: 10px;
+            color: #6c757d;
+        }
+        @media (max-width: 768px) {
+            .contact-form, .contact-card {
+                flex: 100%;
             }
         }
     </style>
@@ -90,8 +74,8 @@
             <h4>Меню</h4>
             <a href="/home/">Главная</a>
             <a href="#">Категории</a>
-            <a href="catalog">Заказы</a>
-            <a href="contacts">Контакты</a>
+            <a href="/catalog/">Заказы</a>
+            <a href="/contacts/">Контакты</a>
         </div>
         <div class="sidebar-footer">
             <a href="#">Профиль</a>
@@ -100,48 +84,71 @@
     </div>
 
     <!-- Основное содержимое -->
-    <div class="container py-5">
-        <h1 class="mb-4 text-center">Контакты</h1>
+    <div class="content">
+        <h1 class="mb-4">Контакты</h1>
 
-        <div class="contact-row">
-            <!-- Секция с формой (слева) -->
-            <div class="contact-form-col">
-                <div class="form-section">
-                    <h3 class="mb-4">Обратная связь</h3>
-                    <form method="post">
-                        {% csrf_token %}
-                        <div class="mb-3">
-                            <label for="name" class="form-label">Ваше имя</label>
-                            <input type="text" class="form-control" id="name" required>
-                        </div>
-                        <div class="mb-3">
-                            <label for="email" class="form-label">Email адрес</label>
-                            <input type="email" class="form-control" id="email" required>
-                        </div>
-                        <div class="mb-3">
-                            <label for="message" class="form-label">Сообщение</label>
-                            <textarea class="form-control" id="message" rows="4" required></textarea>
-                        </div>
-                        <button type="submit" class="btn btn-primary">Отправить</button>
-                    </form>
+        <div class="contact-container">
+            <!-- Форма обратной связи -->
+            <div class="contact-form">
+                <div class="card">
+                    <div class="card-body">
+                        <h3 class="card-title mb-4">Обратная связь</h3>
+                        <form method="post">
+                            {% csrf_token %}
+                            <div class="mb-3">
+                                <label for="name" class="form-label">Ваше имя</label>
+                                <input type="text" class="form-control" id="name" required>
+                            </div>
+                            <div class="mb-3">
+                                <label for="email" class="form-label">Email адрес</label>
+                                <input type="email" class="form-control" id="email" required>
+                            </div>
+                            <div class="mb-3">
+                                <label for="message" class="form-label">Сообщение</label>
+                                <textarea class="form-control" id="message" rows="4" required></textarea>
+                            </div>
+                            <button type="submit" class="btn btn-primary">Отправить</button>
+                        </form>
+                    </div>
                 </div>
             </div>
 
-            <!-- Секция "Наши контакты" (справа) -->
-            <div class="contact-text-col">
-                <div class="contact-section contact-text">
-                    <h2 class="mb-3">Наши контакты</h2>
-                    <p class="lead contact-text">
-                        Тут вроде какой-то текст должен быть, но вот на изображении ни хрена не разобрать, даже с увеличением.
-                        А плюшка от яндекса по распознаванию текста написала какую-то дичь. Так что, пусть будет этот текст.
-                        В задании вообще было много буковок этого голимого текста. И я не знаю, что её придумать.
-                    </p>
-                    <p>
-                        И вот тут ещё что-то про css и js, что типа можно кастомить текст через джаву...
-                    </p>
+            <!-- Карточка "Наши контакты" -->
+            <div class="contact-card">
+                <h3 class="mb-4">Наши контакты</h3>
+
+                <div class="contact-info">
+                    <p><i class="bi bi-geo-alt"></i> <strong>Адрес:</strong> МО п. Свердловский, ул. Заречная, д. 12</p>
+                </div>
+
+                <div class="contact-info">
+                    <p><i class="bi bi-telephone"></i> <strong>Телефон:</strong> +7 (977) 296 68 36</p>
+                </div>
+
+                <div class="contact-info">
+                    <p><i class="bi bi-envelope"></i> <strong>Email:</strong> z.max83@mail.ru</p>
+                </div>
+
+                <div class="contact-info">
+                    <p><i class="bi bi-clock"></i> <strong>График работы:</strong><br>
+                    От забора до заката<br>
+                    Выходной хрен победи когда</p>
+                </div>
+
+                <div class="contact-info mt-4">
+                    <h5>Я в соцсетях, которых у меня нет</h5>
+                    <div class="social-links">
+                        <a href="#" class="me-2"><i class="bi bi-facebook"></i></a>
+                        <a href="#" class="me-2"><i class="bi bi-instagram"></i></a>
+                        <a href="#" class="me-2"><i class="bi bi-telegram"></i></a>
+                        <a href="#" class="me-2"><i class="bi bi-whatsapp"></i></a>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
+
+    <!-- Подключение иконок Bootstrap -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
 </body>
 </html>

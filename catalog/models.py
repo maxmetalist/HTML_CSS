@@ -4,6 +4,7 @@ from django.db import models
 class Category(models.Model):
     """Модель категории товаров"""
 
+    objects = None
     name = models.CharField(max_length=100, verbose_name="Наименование")
     description = models.TextField(verbose_name="Описание", blank=True, null=True)
 
@@ -19,6 +20,7 @@ class Category(models.Model):
 class Product(models.Model):
     """Модель товара"""
 
+    objects = None
     name = models.CharField(max_length=100, verbose_name="Наименование")
     description = models.TextField(verbose_name="Описание", blank=True, null=True)
     image = models.ImageField(upload_to="catalog/photos", verbose_name="Изображение", blank=True, null=True)
@@ -36,3 +38,26 @@ class Product(models.Model):
 
     def __str__(self):
         return self.name
+
+
+class Contact(models.Model):
+    """Модель для хранения контактных данных"""
+
+    DoesNotExist = None
+    objects = None
+    address = models.CharField("Адрес", max_length=200)
+    phone = models.CharField("Телефон", max_length=20)
+    email = models.EmailField("Email")
+    schedule = models.TextField("График работы")
+    map_code = models.TextField("Код карты", blank=True, help_text="HTML-код карты (iframe)")
+
+    class Meta:
+        verbose_name = "контакт"
+        verbose_name_plural = "контакты"
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(args, kwargs)
+        self.id = None
+
+    def __str__(self):
+        return f"Контактные данные ({self.id})"
