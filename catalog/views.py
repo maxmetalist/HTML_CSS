@@ -1,15 +1,26 @@
+from django.core.paginator import Paginator
 from django.http import HttpResponse
-from django.shortcuts import redirect, render
+from django.shortcuts import redirect, render, get_object_or_404
 
 from catalog.models import Contact, Product
 
 
 def home(request):
     """Контроллер страницы home с выводом последних 5 продуктов"""
+
+    # Получаем 5 последних добавленных товаров
     latest_products = Product.objects.order_by("-created_at")[:5]
 
     # Выводим в консоль информацию о продуктах
     print("\nПоследние 5 добавленных продуктов:")
+
+    # Получаем популярные товары
+    popular_products = Product.objects.order_by('?')[:4]
+
+    context = {
+        'latest_products': latest_products,
+        'popular_products': popular_products,
+    }
     for product in latest_products:
         print(
             f"ID: {product.id}, Название: {product.name}, Цена: {product.price}, "
@@ -17,7 +28,7 @@ def home(request):
             f"Дата создания: {product.created_at}"
         )
 
-    return render(request, "home.html", {"latest_products": latest_products})
+    return render(request, "home.html", context)
 
 
 def our_contacts(request):
@@ -50,3 +61,8 @@ def contacts_success(request, name):
 
 def catalog(request):
     return render(request, "catalog.html")
+
+
+def product_detail(request, product_id):
+    product = get_object_or_404(Product, pk=product_id)
+    return render(request, "product_detail.html", {'product': product})
