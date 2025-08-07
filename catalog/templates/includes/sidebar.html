@@ -1,0 +1,15 @@
+<!-- Боковое меню -->
+{% load static %}
+<div class="sidebar">
+    <div class="sidebar-nav">
+        <h4>Меню</h4>
+        <a href="{% url 'catalog:home'  %}">Главная</a>
+        <a href="/categories/">Категории</a>
+        <a href="{% url 'catalog:catalog'%}">Каталог</a>
+        <a href="{% url 'catalog:contacts'%}">Контакты</a>
+    </div>
+    <div class="sidebar-footer">
+        <a href="#">Профиль</a>
+        <a href="#">Выход</a>
+    </div>
+</div>

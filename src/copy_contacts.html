@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+{% load static %}
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Какой-то магаз</title>
+    <link href="{% static 'css/bootstrap.min.css' %}" rel="stylesheet">
+    <link href="{% static 'style.css' %}" rel="stylesheet">
+</head>
+<body>
+    <!-- Боковое меню -->
+    <div class="sidebar">
+        <div class="sidebar-nav">
+            <h4>Меню</h4>
+            <a href="/home/">Главная</a>
+            <a href="#">Категории</a>
+            <a href="/catalog/">Заказы</a>
+            <a href="/contacts/">Контакты</a>
+        </div>
+        <div class="sidebar-footer">
+            <a href="#">Профиль</a>
+            <a href="#">Выход</a>
+        </div>
+    </div>
+
+    <!-- Основное содержимое -->
+    <div class="content">
+        <h1 class="mb-4">Контакты</h1>
+
+        <div class="contact-container">
+            <!-- Форма обратной связи -->
+            <div class="contact-form">
+                <div class="card">
+                    <div class="card-body">
+                        <h3 class="card-title mb-4">Обратная связь</h3>
+                        <form method="post">
+                            {% csrf_token %}
+                            <div class="mb-3">
+                                <label for="name" class="form-label">Ваше имя</label>
+                                <input type="text" class="form-control" id="name" required>
+                            </div>
+                            <div class="mb-3">
+                                <label for="email" class="form-label">Email адрес</label>
+                                <input type="email" class="form-control" id="email" required>
+                            </div>
+                            <div class="mb-3">
+                                <label for="message" class="form-label">Сообщение</label>
+                                <textarea class="form-control" id="message" rows="4" required></textarea>
+                            </div>
+                            <button type="submit" class="btn btn-primary">Отправить</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Карточка "Наши контакты" -->
+            <div class="contact-card">
+                <h3 class="mb-4">Наши контакты</h3>
+
+                <div class="contact-info">
+                    <p><i class="bi bi-geo-alt"></i> <strong>Адрес:</strong> МО п. Свердловский, ул. Заречная, д. 12</p>
+                </div>
+
+                <div class="contact-info">
+                    <p><i class="bi bi-telephone"></i> <strong>Телефон:</strong> +7 (977) 296 68 36</p>
+                </div>
+
+                <div class="contact-info">
+                    <p><i class="bi bi-envelope"></i> <strong>Email:</strong> z.max83@mail.ru</p>
+                </div>
+
+                <div class="contact-info">
+                    <p><i class="bi bi-clock"></i> <strong>График работы:</strong><br>
+                    От забора до заката<br>
+                    Выходной хрен победи когда</p>
+                </div>
+
+                <div class="contact-info mt-4">
+                    <h5>Я в соцсетях, которых у меня нет</h5>
+                    <div class="social-links">
+                        <a href="#" class="me-2"><i class="bi bi-facebook"></i></a>
+                        <a href="#" class="me-2"><i class="bi bi-instagram"></i></a>
+                        <a href="#" class="me-2"><i class="bi bi-telegram"></i></a>
+                        <a href="#" class="me-2"><i class="bi bi-whatsapp"></i></a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Подключение иконок Bootstrap -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
+</body>
+</html>

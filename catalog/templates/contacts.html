@@ -1,154 +1,74 @@
-<!DOCTYPE html>
-<html lang="ru">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Какой-то магаз</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <style>
-        body {
-            display: flex;
-            min-height: 100vh;
-            margin: 0;
-        }
-        .sidebar {
-            width: 25%;
-            background-color: #000;
-            color: #fff;
-            padding: 20px;
-            display: flex;
-            flex-direction: column;
-            justify-content: space-between;
-            box-sizing: border-box;
-        }
-        .sidebar a {
-            color: #fff;
-            text-decoration: none;
-            display: block;
-            padding: 10px 0;
-        }
-        .sidebar a:hover {
-            color: #ccc;
-        }
-        .content {
-            width: 75%;
-            padding: 20px;
-            box-sizing: border-box;
-        }
-        .contact-container {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 20px;
-            margin-top: 20px;
-        }
-        .contact-form {
-            flex: 1;
-            min-width: 300px;
-        }
-        .contact-card {
-            flex: 1;
-            min-width: 300px;
-            background: #f8f9fa;
-            border-radius: 8px;
-            padding: 20px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-        }
-        .contact-info {
-            margin-bottom: 15px;
-        }
-        .contact-info i {
-            margin-right: 10px;
-            color: #6c757d;
-        }
-        @media (max-width: 768px) {
-            .contact-form, .contact-card {
-                flex: 100%;
-            }
-        }
-    </style>
-</head>
-<body>
-    <!-- Боковое меню -->
-    <div class="sidebar">
-        <div class="sidebar-nav">
-            <h4>Меню</h4>
-            <a href="/home/">Главная</a>
-            <a href="#">Категории</a>
-            <a href="/catalog/">Заказы</a>
-            <a href="/contacts/">Контакты</a>
-        </div>
-        <div class="sidebar-footer">
-            <a href="#">Профиль</a>
-            <a href="#">Выход</a>
-        </div>
-    </div>
+{% extends 'base.html' %}
+{% load static %}
 
-    <!-- Основное содержимое -->
-    <div class="content">
-        <h1 class="mb-4">Контакты</h1>
+{% block title %}Контакты | {{ block.super }}{% endblock %}
 
-        <div class="contact-container">
-            <!-- Форма обратной связи -->
-            <div class="contact-form">
-                <div class="card">
-                    <div class="card-body">
-                        <h3 class="card-title mb-4">Обратная связь</h3>
-                        <form method="post">
-                            {% csrf_token %}
-                            <div class="mb-3">
-                                <label for="name" class="form-label">Ваше имя</label>
-                                <input type="text" class="form-control" id="name" required>
-                            </div>
-                            <div class="mb-3">
-                                <label for="email" class="form-label">Email адрес</label>
-                                <input type="email" class="form-control" id="email" required>
-                            </div>
-                            <div class="mb-3">
-                                <label for="message" class="form-label">Сообщение</label>
-                                <textarea class="form-control" id="message" rows="4" required></textarea>
-                            </div>
-                            <button type="submit" class="btn btn-primary">Отправить</button>
-                        </form>
-                    </div>
+{% block content %}
+<div class="container py-4">
+    <h1 class="mb-4">Контакты</h1>
+
+    <div class="row">
+        <!-- Форма обратной связи -->
+        <div class="col-lg-6 mb-4">
+            <div class="card">
+                <div class="card-body">
+                    <h3 class="card-title mb-4">Обратная связь</h3>
+                    <form method="post">
+                        {% csrf_token %}
+                        <div class="mb-3">
+                            <label for="name" class="form-label">Ваше имя</label>
+                            <input type="text" class="form-control" id="name" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="email" class="form-label">Email адрес</label>
+                            <input type="email" class="form-control" id="email" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="message" class="form-label">Сообщение</label>
+                            <textarea class="form-control" id="message" rows="4" required></textarea>
+                        </div>
+                        <button type="submit" class="btn btn-primary">Отправить</button>
+                    </form>
                 </div>
             </div>
+        </div>
 
-            <!-- Карточка "Наши контакты" -->
-            <div class="contact-card">
-                <h3 class="mb-4">Наши контакты</h3>
+        <!-- Контактная информация -->
+        <div class="col-lg-6">
+            <div class="card">
+                <div class="card-body">
+                    <h3 class="mb-4">Наши контакты</h3>
 
-                <div class="contact-info">
-                    <p><i class="bi bi-geo-alt"></i> <strong>Адрес:</strong> МО п. Свердловский, ул. Заречная, д. 12</p>
-                </div>
+                    <div class="contact-info mb-3">
+                        <p><i class="bi bi-geo-alt"></i> <strong>Адрес:</strong> МО п. Свердловский, ул. Заречная, д. 12</p>
+                    </div>
 
-                <div class="contact-info">
-                    <p><i class="bi bi-telephone"></i> <strong>Телефон:</strong> +7 (977) 296 68 36</p>
-                </div>
+                    <div class="contact-info mb-3">
+                        <p><i class="bi bi-telephone"></i> <strong>Телефон:</strong> +7 (977) 296 68 36</p>
+                    </div>
 
-                <div class="contact-info">
-                    <p><i class="bi bi-envelope"></i> <strong>Email:</strong> z.max83@mail.ru</p>
-                </div>
+                    <div class="contact-info mb-3">
+                        <p><i class="bi bi-envelope"></i> <strong>Email:</strong> z.max83@mail.ru</p>
+                    </div>
 
-                <div class="contact-info">
-                    <p><i class="bi bi-clock"></i> <strong>График работы:</strong><br>
-                    От забора до заката<br>
-                    Выходной хрен победи когда</p>
-                </div>
+                    <div class="contact-info mb-4">
+                        <p><i class="bi bi-clock"></i> <strong>График работы:</strong><br>
+                        От забора до заката<br>
+                        Выходной хрен победи когда</p>
+                    </div>
 
-                <div class="contact-info mt-4">
-                    <h5>Я в соцсетях, которых у меня нет</h5>
-                    <div class="social-links">
-                        <a href="#" class="me-2"><i class="bi bi-facebook"></i></a>
-                        <a href="#" class="me-2"><i class="bi bi-instagram"></i></a>
-                        <a href="#" class="me-2"><i class="bi bi-telegram"></i></a>
-                        <a href="#" class="me-2"><i class="bi bi-whatsapp"></i></a>
+                    <div class="contact-info">
+                        <h5>Я в соцсетях, которых у меня нет</h5>
+                        <div class="social-links">
+                            <a href="#" class="btn btn-outline-primary me-2"><i class="bi bi-facebook"></i></a>
+                            <a href="#" class="btn btn-outline-danger me-2"><i class="bi bi-instagram"></i></a>
+                            <a href="#" class="btn btn-outline-info me-2"><i class="bi bi-telegram"></i></a>
+                            <a href="#" class="btn btn-outline-success me-2"><i class="bi bi-whatsapp"></i></a>
+                        </div>
                     </div>
                 </div>
             </div>
         </div>
     </div>
-
-    <!-- Подключение иконок Bootstrap -->
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
-</body>
-</html>
+</div>
+{% endblock %}
