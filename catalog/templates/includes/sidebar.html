@@ -3,13 +3,14 @@
 <div class="sidebar">
     <div class="sidebar-nav">
         <h4>Меню</h4>
-        <a href="{% url 'catalog:home'  %}">Главная</a>
-        <a href="/categories/">Категории</a>
-        <a href="{% url 'catalog:catalog'%}">Каталог</a>
-        <a href="{% url 'catalog:contacts'%}">Контакты</a>
+        <a href="{% url 'catalog:home' %}"><i class="bi bi-house"></i> Главная</a>
+        <a href="/categories/"><i class="bi bi-tags"></i> Категории</a>
+        <a href="{% url 'catalog:catalog' %}"><i class="bi bi-box-seam"></i> Каталог</a>
+        <a href="{% url 'blog:post_list' %}"><i class="bi bi-journal-text"></i> Блог</a>
+        <a href="{% url 'catalog:contacts' %}"><i class="bi bi-envelope"></i> Контакты</a>
     </div>
     <div class="sidebar-footer">
-        <a href="#">Профиль</a>
-        <a href="#">Выход</a>
+        <a href="#"><i class="bi bi-person"></i> Профиль</a>
+        <a href="#"><i class="bi bi-box-arrow-right"></i> Выход</a>
     </div>
 </div>
