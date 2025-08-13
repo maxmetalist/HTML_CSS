@@ -1,0 +1,67 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ object.name }}{% endblock %}
+
+{% block breadcrumbs_items %}
+<li class="breadcrumb-item"><a href="{% url 'catalog:product_detail' object.pk %}">{{ object.name|truncatechars:20 }}</a></li>
+{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-4">
+        {% if object.image %}
+        <img src="{{ object.image.url }}" class="img-fluid rounded mb-3" alt="{{ object.name }}">
+        {% else %}
+        <div class="bg-light p-5 text-center mb-3">
+            <i class="bi bi-image" style="font-size: 3rem;"></i>
+            <p class="mt-2">Нет изображения</p>
+        </div>
+        {% endif %}
+    </div>
+    <div class="col-md-8">
+        <h1>{{ object.name }}</h1>
+
+        <div class="d-flex justify-content-between mb-3">
+            <div>
+                <span class="h3 text-primary">{{ object.Price }} ₽</span>
+                {% if object.old_price %}
+                <span class="text-decoration-line-through text-muted ms-2">{{ object.old_price }} ₽</span>
+                {% endif %}
+            </div>
+            <span class="badge bg-{% if object.in_stock %}success{% else %}danger{% endif %}">
+                {% if object.in_stock %}В наличии ({{object.stock}} шт.){% else %}Нет в наличии{% endif %}
+            </span>
+        </div>
+
+        <div class="card mb-3">
+            <div class="card-body">
+                <h5 class="card-title">Описание</h5>
+                <p class="card-text">{{ object.description|default:"Описание отсутствует" }}</p>
+            </div>
+        </div>
+
+        <div class="row mb-3">
+            <div class="col-md-6">
+                <p><strong>Категория:</strong> {{object.category|default:"Не указана"}}</p>
+                <p><strong>Бренд:</strong> {{object.brand|default:"Не указан"}}</p>
+            </div>
+            <div class="col-md-6">
+                <p><strong>Вес:</strong> {{object.weight|default:"Не указан"}} кг</p>
+                <p><strong>Размеры:</strong> {{object.dimensions|default:"Не указаны"}}</p>
+            </div>
+        </div>
+
+        <div class="btn-group">
+            <a href="{% url 'catalog:product_update' object.pk %}" class="btn btn-primary">
+                <i class="bi bi-pencil"></i> Редактировать
+            </a>
+            <a href="{% url 'catalog:product_delete' object.pk %}" class="btn btn-danger">
+                <i class="bi bi-trash"></i> Удалить
+            </a>
+            <a href="{% url 'catalog:catalog' %}" class="btn btn-outline-secondary">
+                <i class="bi bi-arrow-left"></i> Назад
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock %}

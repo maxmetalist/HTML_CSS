@@ -1,0 +1,175 @@
+{% extends 'base.html' %}
+
+{% block title %}{% if object %}Редактирование {{ object.name }}{% else %}Добавление товара{% endif %}{% endblock %}
+
+{% block content %}
+<div class="card">
+    <div class="card-header">
+        <h4 class="mb-0">{% if object %}Редактирование товара{% else %}Добавление нового товара{% endif %}</h4>
+    </div>
+    <div class="card-body">
+        <form method="post" enctype="multipart/form-data" class="needs-validation" novalidate>
+            {% csrf_token %}
+
+            {% if form.non_field_errors %}
+            <div class="alert alert-danger">
+                {% for error in form.non_field_errors %}
+                <p class="mb-0">{{ error }}</p>
+                {% endfor %}
+            </div>
+            {% endif %}
+
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="mb-3">
+                        <label for="{{ form.name.id_for_label }}" class="form-label">{{ form.name.label }}</label>
+                        {{ form.name }}
+                        {% if form.name.errors %}
+                        <div class="invalid-feedback d-block">
+                            {% for error in form.name.errors %}
+                            <p class="mb-0">{{ error }}</p>
+                            {% endfor %}
+                        </div>
+                        {% endif %}
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="{{ form.category.id_for_label }}" class="form-label">{{ form.category.label }}</label>
+                        {{ form.category }}
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="{{ form.price.id_for_label }}" class="form-label">{{ form.price.label }}</label>
+                        <div class="input-group {% if form.price.errors %}is-invalid{% endif %}">
+                            {{ form.price }}
+                            <span class="input-group-text">₽</span>
+                        </div>
+                        {% if form.price.errors %}
+                        <div class="invalid-feedback d-block">
+                            {% for error in form.price.errors %}
+                            <p class="mb-0">{{ error }}</p>
+                            {% endfor %}
+                        </div>
+                        {% endif %}
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="{{ form.old_price.id_for_label }}" class="form-label">{{ form.old_price.label }}</label>
+                        <div class="input-group">
+                            {{ form.old_price }}
+                            <span class="input-group-text">₽</span>
+                        </div>
+                        {% if form.old_price.errors %}
+                        <div class="invalid-feedback d-block">
+                            {% for error in form.old_price.errors %}
+                            <p class="mb-0">{{ error }}</p>
+                            {% endfor %}
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <div class="col-md-6">
+                    <div class="card mb-4">
+                        <div class="card-header bg-light">
+                            <h5 class="mb-0">Изображение товара</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="mb-3">
+                                <label for="{{ form.image.id_for_label }}" class="form-label">
+                                    {{ form.image.label }}
+                                    <small class="text-muted">(JPEG или PNG, макс. 5 МБ)</small>
+                                </label>
+                                {{ form.image }}
+                                {% if form.image.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {% for error in form.image.errors %}
+                                    <p class="mb-0">{{ error }}</p>
+                                    {% endfor %}
+                                </div>
+                                {% endif %}
+
+                                {% if form.instance.image %}
+                                <div class="mt-3">
+                                    <p class="mb-1">Текущее изображение:</p>
+                                    <img src="{{ form.instance.image.url }}"
+                                         class="img-thumbnail"
+                                         style="max-height: 200px;"
+                                         alt="Текущее изображение товара">
+                                    <div class="form-check mt-2">
+                                        <input class="form-check-input" type="checkbox"
+                                               name="image-clear" id="image-clear-id">
+                                        <label class="form-check-label" for="image-clear-id">
+                                            Удалить текущее изображение
+                                        </label>
+                                    </div>
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <div class="form-check form-switch">
+                            {{ form.in_stock }}
+                            <label class="form-check-label" for="{{ form.in_stock.id_for_label }}">{{ form.in_stock.label }}</label>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="{{ form.stock.id_for_label }}" class="form-label">{{ form.stock.label }}</label>
+                        {{ form.stock }}
+                    </div>
+                </div>
+            </div>
+
+            <div class="mb-3">
+                <label for="{{ form.description.id_for_label }}" class="form-label">{{ form.description.label }}</label>
+                {{ form.description }}
+                {% if form.description.errors %}
+                <div class="invalid-feedback d-block">
+                    {% for error in form.description.errors %}
+                    <p class="mb-0">{{ error }}</p>
+                    {% endfor %}
+                </div>
+                {% endif %}
+            </div>
+
+            <div class="row">
+                <div class="col-md-4 mb-3">
+                    <label for="{{ form.brand.id_for_label }}" class="form-label">{{ form.brand.label }}</label>
+                    {{ form.brand }}
+                </div>
+
+                <div class="col-md-4 mb-3">
+                    <label for="{{ form.weight.id_for_label }}" class="form-label">{{ form.weight.label }}</label>
+                    <div class="input-group">
+                        {{ form.weight }}
+                        <span class="input-group-text">кг</span>
+                    </div>
+                </div>
+
+                <div class="col-md-4 mb-3">
+                    <label for="{{ form.dimensions.id_for_label }}" class="form-label">{{ form.dimensions.label }}</label>
+                    {{ form.dimensions }}
+                </div>
+
+                <div class="col-md-4 mb-3">
+                    <label for="{{ form.material.id_for_label }}" class="form-label">{{ form.material.label }}</label>
+                    {{ form.material }}
+                </div>
+            </div>
+
+            <div class="d-flex gap-2">
+                <button type="submit" class="btn btn-primary">
+                    <i class="bi bi-save"></i> Сохранить
+                </button>
+                <a href="{% if object %}{% url 'catalog:product_detail' object.pk %}{% else %}{% url 'catalog:product_list' %}{% endif %}"
+                   class="btn btn-outline-secondary">
+                    <i class="bi bi-x-circle"></i> Отмена
+                </a>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
