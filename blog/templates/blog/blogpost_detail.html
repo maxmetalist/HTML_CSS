@@ -1,0 +1,45 @@
+{% extends "blog/base_blog.html" %}
+
+{% block blog_content %}
+<article>
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1>{{ post.title }}</h1>
+        <div>
+            <a href="{% url 'blog:post_update' post.pk %}" class="btn btn-sm btn-outline-secondary">
+                <i class="bi bi-pencil"></i> Редактировать
+            </a>
+            <a href="{% url 'blog:post_delete' post.pk %}" class="btn btn-sm btn-outline-danger">
+                <i class="bi bi-trash"></i> Удалить
+            </a>
+        </div>
+    </div>
+
+    {% if post.preview %}
+    <div class="text-center mb-4">
+        <img src="{{ post.preview.url }}" class="img-fluid rounded" alt="{{ post.title }}">
+    </div>
+    {% endif %}
+
+    <div class="mb-4">
+        <span class="badge bg-{% if post.is_published %}success{% else %}warning{% endif %} me-2">
+            {% if post.is_published %}Опубликовано{% else %}Черновик{% endif %}
+        </span>
+        <span class="text-muted">
+            <i class="bi bi-calendar me-1"></i> {{ post.created_at|date:"d.m.Y H:i" }}
+        </span>
+        <span class="text-muted ms-3">
+            <i class="bi bi-eye me-1"></i> {{ post.views_count }} просмотров
+        </span>
+    </div>
+
+    <div class="blog-content">
+        {{ post.content|linebreaks }}
+    </div>
+
+    <div class="mt-4">
+        <a href="{% url 'blog:post_list' %}" class="btn btn-outline-primary">
+            <i class="bi bi-arrow-left"></i> Назад к списку
+        </a>
+    </div>
+</article>
+{% endblock %}

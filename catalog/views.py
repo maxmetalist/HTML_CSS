@@ -1,59 +1,66 @@
 from django.http import HttpResponse
-from django.shortcuts import get_object_or_404, redirect, render
-
+from django.shortcuts import redirect, render
+from django.views import View
+from django.views.generic import ListView, DetailView, TemplateView
 from catalog.models import Contact, Product
 
 
-def home(request):
-    """Контроллер страницы home с выводом последних 5 продуктов"""
-
-    # Получаем 5 последних добавленных товаров
-    latest_products = Product.objects.order_by("-created_at")[:5]
-
-    # Получаем популярные товары
-    popular_products = Product.objects.order_by("?")[:4]
-
-    context = {
-        "latest_products": latest_products,
-        "popular_products": popular_products,
-    }
-    return render(request, "home.html", context)
+class HomeView(TemplateView):
+    """Контроллер страницы home с выводом последних 5 продуктов
+       и популярными товарами"""
+    template_name = "home.html"
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["latest_products"] = Product.objects.order_by("-created_at")[:5]
+        context["popular_products"] = Product.objects.order_by("?")[:4]
+        return context
 
 
-def our_contacts(request):
-    try:
-        contact_data = Contact.objects.first()
-    except Contact.DoesNotExist:
-        contact_data = None
+class OurContactsView(TemplateView):
+    """Контроллер для отображения контактной информации"""
+    template_name = "contacts.html"
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        try:
+            contact_data = Contact.objects.first()
+        except Contact.DoesNotExist:
+            contact_data = None
+        context["contact"] = contact_data
+        return context
 
-    context = {"contact": contact_data}
-    return render(request, "contacts.html", context)
 
+class ContactsView(View):
+    """Класс для обработки контактной формы"""
+    template_name = "contacts.html"
 
-def contacts(request):
-    """Контроллер страницы contacts. Есть обработка POST-запроса с выводом ответного
-    сообщения через redirect"""
-    if request.method == "POST":
+    def get(self, request, *args, **kwargs):
+        return render(request, self.template_name)
+
+    def post(self, request, *args, **kwargs):
         name = request.POST.get("name")
         email = request.POST.get("email")
         message = request.POST.get("message")
         if not all([name, email, message]):
-            return render(request, "contacts.html", {"error": "Все поля обязательны для заполнения"})
+            return render(request, self.template_name, {"error": "Все поля обязательны для заполнения"})
         print(f"Новое сообщение от {name} ({email}): {message}")
         return redirect("contacts_success", name=name)
-    return render(request, "contacts.html")
 
 
-def contacts_success(request, name):
-    return HttpResponse(f"Спасибо,{name}! Мы получили Ваше сообщение.")
+class ContactsSuccessView(View):
+    """Класс для отображения сообщения об успешной отправке формы"""
+
+    def get(self, request, name, *args, **kwargs):
+        return HttpResponse(f"Спасибо,{name}! Мы получили Ваше сообщение.")
 
 
-def catalog(request):
-    products = Product.objects.all()
-    context = {"products": products}
-    return render(request, "catalog.html", context)
+class CatalogView(ListView):
+    """Контроллер для отображения каталога товаров"""
+    model = Product
+    template_name = "catalog.html"
+    context_object_name = "products"
 
-
-def product_detail(request, product_id):
-    product = get_object_or_404(Product, pk=product_id)
-    return render(request, "product_detail.html", {"product": product})
+class ProductDetailView(DetailView):
+    """Контроллер для отображения информации об отдельном товаре"""
+    model = Product
+    template_name = "product_detail.html"
+    context_object_name = "product"

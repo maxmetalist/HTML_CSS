@@ -1,0 +1,10 @@
+{% extends "base.html" %}
+
+{% block title %}{% if object %}{{ object.title }}{% else %}Блог{% endif %}{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    {% block blog_content %}
+    {% endblock %}
+</div>
+{% endblock %}
