@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{% block title %}Какой-то магаз{% endblock %}</title>
+    <title>{% block title %}Магазин товаров{% endblock %}</title>
     <link href="{% static 'css/bootstrap.min.css' %}" rel="stylesheet">
     <link href="{% static 'style.css' %}" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
@@ -13,7 +13,20 @@
     {% include 'includes/sidebar.html' %}
 
     <main class="content">
-      {% block content %}{% endblock %}
+        <div class="container mt-4">
+            {% block breadcrumbs %}
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="{% url 'catalog:product_list' %}">Товары</a></li>
+                    {% block breadcrumbs_items %}{% endblock %}
+                </ol>
+            </nav>
+            {% endblock %}
+
+            {% block content %}{% endblock %}
+        </div>
     </main>
+
+    <script src="{% static 'js/bootstrap.bundle.min.js' %}"></script>
 </body>
 </html>
