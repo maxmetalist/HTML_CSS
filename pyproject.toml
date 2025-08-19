@@ -14,7 +14,9 @@ dependencies = [
     "psycopg2-binary (>=2.9.10,<3.0.0)",
     "dotenv (>=0.9.9,<0.10.0)",
     "pillow (>=11.3.0,<12.0.0)",
-    "ipython (>=9.4.0,<10.0.0)"
+    "ipython (>=9.4.0,<10.0.0)",
+    "django-phonenumber-field (>=8.1.0,<9.0.0)",
+    "phonenumbers (>=9.0.12,<10.0.0)"
 ]
 
 

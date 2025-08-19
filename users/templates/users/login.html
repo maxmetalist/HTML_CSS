@@ -1,0 +1,59 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Вход в систему{% endblock %}
+
+{% block breadcrumbs_items %}
+<li class="breadcrumb-item active">Вход</li>
+{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h4 class="mb-0">Вход в систему</h4>
+            </div>
+            <div class="card-body">
+                <form method="post">
+                    {% csrf_token %}
+
+                    {% if form.errors %}
+                    <div class="alert alert-danger">
+                        Неверный email или пароль. Пожалуйста, попробуйте снова.
+                    </div>
+                    {% endif %}
+
+                    <div class="mb-3">
+                        <label for="{{ form.username.id_for_label }}" class="form-label">Email</label>
+                        {{ form.username }}
+                        {% if form.username.errors %}
+                        <div class="text-danger">{{ form.username.errors }}</div>
+                        {% endif %}
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="{{ form.password.id_for_label }}" class="form-label">Пароль</label>
+                        {{ form.password }}
+                        {% if form.password.errors %}
+                        <div class="text-danger">{{ form.password.errors }}</div>
+                        {% endif %}
+                    </div>
+
+                    <button type="submit" class="btn btn-primary w-100">
+                        <i class="bi bi-box-arrow-in-right"></i> Войти
+                    </button>
+                </form>
+
+                <hr>
+                <div class="text-center">
+                    <p class="mb-0">Нет аккаунта?</p>
+                    <a href="{% url 'users:register' %}" class="btn btn-outline-secondary mt-2">
+                        <i class="bi bi-person-plus"></i> Зарегистрироваться
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

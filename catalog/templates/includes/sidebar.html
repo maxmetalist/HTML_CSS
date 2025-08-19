@@ -10,7 +10,17 @@
         <a href="{% url 'catalog:contacts' %}"><i class="bi bi-envelope"></i> Контакты</a>
     </div>
     <div class="sidebar-footer">
-        <a href="#"><i class="bi bi-person"></i> Профиль</a>
-        <a href="#"><i class="bi bi-box-arrow-right"></i> Выход</a>
+        {% if user.is_authenticated %}
+            <a href="{% url 'users:profile' %}"><i class="bi bi-person"></i> Профиль</a>
+            <form method="post" action="{% url 'users:logout' %}" style="display: inline;">
+                {% csrf_token %}
+                <button type="submit" class="btn btn-link p-0 text-decoration-none text-dark">
+                    <i class="bi bi-box-arrow-right"></i> Выход
+                </button>
+            </form>
+        {% else %}
+            <a href="{% url 'users:login' %}"><i class="bi bi-box-arrow-in-right"></i> Вход</a>
+            <a href="{% url 'users:register' %}"><i class="bi bi-person-plus"></i> Регистрация</a>
+        {% endif %}
     </div>
 </div>
