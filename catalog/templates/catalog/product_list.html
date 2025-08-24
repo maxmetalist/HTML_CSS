@@ -9,9 +9,13 @@
 {% block content %}
 <div class="d-flex justify-content-between align-items-center mb-4">
     <h1>Каталог товаров</h1>
+
+    <!-- Проверка права на добавление продукта -->
+    {% if perms.catalog.add_product %}
     <a href="{% url 'catalog:product_create' %}" class="btn btn-primary">
         <i class="bi bi-plus-circle"></i> Добавить товар
     </a>
+    {% endif %}
 </div>
 
 <div class="card">
@@ -23,7 +27,9 @@
                         <th>Название</th>
                         <th>Категория</th>
                         <th>Цена</th>
+                        <th>Статус</th>
                         <th>Наличие</th>
+                        <th>Владелец</th>
                         <th>Действия</th>
                     </tr>
                 </thead>
@@ -32,9 +38,24 @@
                     <tr>
                         <td>
                             <a href="{% url 'catalog:product_detail' product.pk %}">{{ product.name }}</a>
+                            {% if product.publication_status != 'published' %}
+                            <span class="badge bg-secondary ms-1" title="{{ product.get_publication_status_display }}">
+                                <i class="bi bi-eye-slash"></i>
+                            </span>
+                            {% endif %}
+                            {% if product.owner == user %}
+                            <span class="badge bg-primary ms-1" title="Мой продукт">
+                                <i class="bi bi-star"></i>
+                            </span>
+                            {% endif %}
                         </td>
                         <td>{{ product.category|default:"-" }}</td>
                         <td>{{ product.price }} ₽</td>
+                        <td>
+                            <span class="badge bg-{% if product.publication_status == 'published' %}success{% elif product.publication_status == 'draft' %}secondary{% elif product.publication_status == 'review' %}warning{% else %}danger{% endif %}">
+                                {{ product.get_publication_status_display }}
+                            </span>
+                        </td>
                         <td>
                             {% if product.in_stock %}
                             <span class="badge bg-success">В наличии</span>
@@ -42,22 +63,107 @@
                             <span class="badge bg-danger">Нет в наличии</span>
                             {% endif %}
                         </td>
+                        <td>
+                            {% if product.owner %}
+                                {% if product.owner == user %}
+                                <span class="text-success">Вы</span>
+                                {% else %}
+                                {{ product.owner.email|truncatechars:15 }}
+                                {% endif %}
+                            {% else %}
+                                -
+                            {% endif %}
+                        </td>
                         <td class="text-nowrap">
-                            <a href="{% url 'catalog:product_update' product.pk %}" class="btn btn-sm btn-outline-primary">
+                            <!-- Кнопка просмотра -->
+                            <a href="{% url 'catalog:product_detail' product.pk %}" class="btn btn-sm btn-outline-info" title="Просмотреть">
+                                <i class="bi bi-eye"></i>
+                            </a>
+
+                            <!-- Кнопка редактирования - только владелец или модератор -->
+                            {% if product.owner == user or perms.catalog.can_change_publication_status %}
+                            <a href="{% url 'catalog:product_update' product.pk %}" class="btn btn-sm btn-outline-primary" title="Редактировать">
                                 <i class="bi bi-pencil"></i>
                             </a>
-                            <a href="{% url 'catalog:product_delete' product.pk %}" class="btn btn-sm btn-outline-danger">
+                            {% endif %}
+
+                            <!-- Кнопка удаления - только владелец или модератор -->
+                            {% if product.owner == user or perms.catalog.can_delete_any_product %}
+                            <a href="{% url 'catalog:product_delete' product.pk %}" class="btn btn-sm btn-outline-danger" title="Удалить"
+                               onclick="return confirm('Вы уверены, что хотите удалить товар «{{ product.name }}»?')">
                                 <i class="bi bi-trash"></i>
                             </a>
+                            {% endif %}
+
+                            <!-- Быстрое снятие с публикации - только модераторы -->
+                            {% if perms.catalog.can_unpublish_product and product.publication_status == 'published' %}
+                            <form method="post" action="{% url 'catalog:product_unpublish' product.pk %}" class="d-inline"
+                                  onsubmit="return confirm('Снять товар «{{ product.name }}» с публикации?')">
+                                {% csrf_token %}
+                                <button type="submit" class="btn btn-sm btn-outline-warning" title="Снять с публикации">
+                                    <i class="bi bi-eye-slash"></i>
+                                </button>
+                            </form>
+                            {% endif %}
+
+                            <!-- Быстрая публикация - только модераторы -->
+                            {% if perms.catalog.can_change_publication_status and product.publication_status != 'published' %}
+                            <form method="post" action="{% url 'catalog:product_publish' product.pk %}" class="d-inline"
+                                  onsubmit="return confirm('Опубликовать товар «{{ product.name }}»?')">
+                                {% csrf_token %}
+                                <button type="submit" class="btn btn-sm btn-outline-success" title="Опубликовать">
+                                    <i class="bi bi-eye"></i>
+                                </button>
+                            </form>
+                            {% endif %}
                         </td>
                     </tr>
                     {% empty %}
                     <tr>
-                        <td colspan="5" class="text-center">Товары не найдены</td>
+                        <td colspan="7" class="text-center">Товары не найдены</td>
                     </tr>
                     {% endfor %}
                 </tbody>
             </table>
+        </div>
+    </div>
+</div>
+
+<!-- Панель фильтрации -->
+<div class="card mt-4">
+    <div class="card-header">
+        <h5 class="card-title mb-0">Фильтры</h5>
+    </div>
+    <div class="card-body">
+        <div class="btn-group">
+            <a href="?filter=all" class="btn btn-outline-secondary {% if request.GET.filter != 'my' %}active{% endif %}">
+                Все товары
+            </a>
+
+            <!-- Фильтр "Мои товары" -->
+            {% if user.is_authenticated %}
+            <a href="?filter=my" class="btn btn-outline-primary {% if request.GET.filter == 'my' %}active{% endif %}">
+                <i class="bi bi-star"></i> Мои товары
+            </a>
+            {% endif %}
+
+            <!-- Фильтр по статусу -->
+            <div class="btn-group">
+                <button type="button" class="btn btn-outline-info dropdown-toggle" data-bs-toggle="dropdown">
+                    <i class="bi bi-filter"></i> По статусу
+                </button>
+                <ul class="dropdown-menu">
+                    <li><a class="dropdown-item" href="?status=published">Опубликованные</a></li>
+                    <li><a class="dropdown-item" href="?status=draft">Черновики</a></li>
+                    <li><a class="dropdown-item" href="?status=review">На модерации</a></li>
+                    <li><a class="dropdown-item" href="?status=rejected">Отклоненные</a></li>
+                </ul>
+            </div>
+
+            <!-- Сброс фильтров -->
+            <a href="?" class="btn btn-outline-warning">
+                <i class="bi bi-x-circle"></i> Сбросить
+            </a>
         </div>
     </div>
 </div>
@@ -67,7 +173,7 @@
     <ul class="pagination justify-content-center">
         {% if page_obj.has_previous %}
         <li class="page-item">
-            <a class="page-link" href="?page={{ page_obj.previous_page_number }}" aria-label="Previous">
+            <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if request.GET.filter %}&filter={{ request.GET.filter }}{% endif %}{% if request.GET.status %}&status={{ request.GET.status }}{% endif %}" aria-label="Previous">
                 <span aria-hidden="true">&laquo;</span>
             </a>
         </li>
@@ -75,13 +181,13 @@
 
         {% for num in page_obj.paginator.page_range %}
         <li class="page-item {% if num == page_obj.number %}active{% endif %}">
-            <a class="page-link" href="?page={{ num }}">{{ num }}</a>
+            <a class="page-link" href="?page={{ num }}{% if request.GET.filter %}&filter={{ request.GET.filter }}{% endif %}{% if request.GET.status %}&status={{ request.GET.status }}{% endif %}">{{ num }}</a>
         </li>
         {% endfor %}
 
         {% if page_obj.has_next %}
         <li class="page-item">
-            <a class="page-link" href="?page={{ page_obj.next_page_number }}" aria-label="Next">
+            <a class="page-link" href="?page={{ page_obj.next_page_number }}{% if request.GET.filter %}&filter={{ request.GET.filter }}{% endif %}{% if request.GET.status %}&status={{ request.GET.status }}{% endif %}" aria-label="Next">
                 <span aria-hidden="true">&raquo;</span>
             </a>
         </li>

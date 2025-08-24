@@ -1,5 +1,9 @@
+from django.contrib.auth import get_user_model
 from django.db import models
 
+
+
+User = get_user_model()
 
 class Category(models.Model):
     """Модель категории товаров"""
@@ -20,6 +24,14 @@ class Category(models.Model):
 class Product(models.Model):
     """Модель товара"""
 
+    # Добавляем статусы публикации товара в константах тут
+    PUBLICATION_STATUS = [
+        ('draft', 'Черновик'),
+        ('review', 'На проверке'),
+        ('published', 'Опубликовано'),
+        ('rejected', 'Отклонено'),
+    ]
+
     objects = None
     name = models.CharField(max_length=200, verbose_name="Наименование")
     description = models.TextField(verbose_name="Описание", blank=True, null=True)
@@ -37,14 +49,42 @@ class Product(models.Model):
     old_price = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True, verbose_name="Старая цена")
     created_at = models.DateTimeField(auto_now_add=True, verbose_name="Дата создания")
     updated_at = models.DateTimeField(auto_now=True, verbose_name="Дата последнего изменения")
+    publication_status = models.CharField(
+        max_length=20,
+        choices=PUBLICATION_STATUS,
+        default='draft',
+        verbose_name="Статус публикации"
+    )
+    is_published = models.BooleanField(default=False, verbose_name="Опубликовано")
+    owner = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        related_name='products',
+        verbose_name='Владелец',
+        null=True,  # временно, для существующих записей
+        blank=True
+    )
 
     class Meta:
         verbose_name = "товар"
         verbose_name_plural = "товары"
         ordering = ["name", "created_at"]
+        permissions = [
+            ("can_unpublish_product", "Может отменять публикацию продукта"),
+            ("can_delete_any_product", "Может удалять любой продукт"),
+            ("can_change_publication_status", "Может изменять статус публикации"),
+        ]
 
     def __str__(self):
         return self.name
+
+    def save(self, *args, **kwargs):
+        # Автоматическая синхронизация is_published с publication_status
+        if self.publication_status == 'published':
+            self.is_published = True
+        else:
+            self.is_published = False
+        super().save(*args, **kwargs)
 
 
 class ProductImage(models.Model):

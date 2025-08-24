@@ -17,9 +17,17 @@ class ProductForm(forms.ModelForm):
             "created_at": forms.DateTimeInput(attrs={"type": "datetime-local"}),
             "updated_at": forms.DateTimeInput(attrs={"type": "datetime-local"}),
         }
+        labels = {
+            'publication_status': 'Статус публикации',
+            'is_published': 'Опубликовано',
+        }
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+
+        # Скрываем поле publication_status по умолчанию
+        if 'publication_status' in self.fields:
+            self.fields['publication_status'].widget = forms.HiddenInput()
 
         # Общая стилизация для всех полей
         for field_name, field in self.fields.items():
