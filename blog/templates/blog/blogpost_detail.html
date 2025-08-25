@@ -4,14 +4,70 @@
 <article>
     <div class="d-flex justify-content-between align-items-center mb-4">
         <h1>{{ post.title }}</h1>
+
+        <!-- Кнопки действий - только для авторизованных пользователей -->
+        {% if user.is_authenticated %}
         <div>
-            <a href="{% url 'blog:post_update' post.pk %}" class="btn btn-sm btn-outline-secondary">
+            <!-- Редактирование - автор или контент-менеджер -->
+            {% if post.author == user or perms.blog.can_edit_all_blogposts %}
+            <a href="{% url 'blog:post_update' post.pk %}" class="btn btn-sm btn-outline-primary">
                 <i class="bi bi-pencil"></i> Редактировать
             </a>
-            <a href="{% url 'blog:post_delete' post.pk %}" class="btn btn-sm btn-outline-danger">
+            {% endif %}
+
+            <!-- Удаление - автор или контент-менеджер -->
+            {% if post.author == user or perms.blog.can_delete_all_blogposts %}
+            <a href="{% url 'blog:post_delete' post.pk %}" class="btn btn-sm btn-outline-danger"
+               onclick="return confirm('Вы уверены, что хотите удалить запись «{{ post.title }}»?')">
                 <i class="bi bi-trash"></i> Удалить
             </a>
+            {% endif %}
+
+            <!-- Публикация/снятие с публикации - только контент-менеджеры -->
+            {% if perms.blog.can_publish_blogpost %}
+                {% if post.is_published %}
+                <form method="post" action="{% url 'blog:post_unpublish' post.pk %}" class="d-inline">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-sm btn-outline-warning"
+                            onclick="return confirm('Снять запись «{{ post.title }}» с публикации?')">
+                        <i class="bi bi-eye-slash"></i> Снять с публикации
+                    </button>
+                </form>
+                {% else %}
+                <form method="post" action="{% url 'blog:post_publish' post.pk %}" class="d-inline">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-sm btn-outline-success"
+                            onclick="return confirm('Опубликовать запись «{{ post.title }}»?')">
+                        <i class="bi bi-eye"></i> Опубликовать
+                    </button>
+                </form>
+                {% endif %}
+            {% endif %}
+
+            <!-- Изменение статуса - только контент-менеджеры -->
+            {% if perms.blog.can_change_blog_status %}
+            <div class="btn-group">
+                <button type="button" class="btn btn-sm btn-outline-info dropdown-toggle" data-bs-toggle="dropdown">
+                    <i class="bi bi-gear"></i> Статус
+                </button>
+                <ul class="dropdown-menu">
+                    {% for value, label in post.STATUS_CHOICES %}
+                    <li>
+                        <form method="post" action="{% url 'blog:post_change_status' post.pk %}">
+                            {% csrf_token %}
+                            <input type="hidden" name="status" value="{{ value }}">
+                            <button type="submit" class="dropdown-item {% if post.status == value %}active{% endif %}"
+                                    onclick="return confirm('Изменить статус на «{{ label }}»?')">
+                                {{ label }}
+                            </button>
+                        </form>
+                    </li>
+                    {% endfor %}
+                </ul>
+            </div>
+            {% endif %}
         </div>
+        {% endif %}
     </div>
 
     {% if post.preview %}
@@ -24,9 +80,30 @@
         <span class="badge bg-{% if post.is_published %}success{% else %}warning{% endif %} me-2">
             {% if post.is_published %}Опубликовано{% else %}Черновик{% endif %}
         </span>
+
+        <!-- Информация об авторе -->
         <span class="text-muted">
+            <i class="bi bi-person me-1"></i>
+            {% if post.author %}
+                {{ post.author.email }}
+                {% if post.author == user %}
+                    <span class="badge bg-primary ms-1">Вы</span>
+                {% endif %}
+            {% else %}
+                Неизвестный автор
+            {% endif %}
+        </span>
+
+        <span class="text-muted ms-3">
             <i class="bi bi-calendar me-1"></i> {{ post.created_at|date:"d.m.Y H:i" }}
         </span>
+
+        {% if post.published_at %}
+        <span class="text-muted ms-3">
+            <i class="bi bi-calendar-check me-1"></i> Опубликовано: {{ post.published_at|date:"d.m.Y H:i" }}
+        </span>
+        {% endif %}
+
         <span class="text-muted ms-3">
             <i class="bi bi-eye me-1"></i> {{ post.views_count }} просмотров
         </span>
@@ -36,10 +113,69 @@
         {{ post.content|linebreaks }}
     </div>
 
+    <!-- Информация для контент-менеджеров -->
+    {% if perms.blog.can_edit_all_blogposts %}
+    <div class="card mt-4">
+        <div class="card-header">
+            <h6 class="card-title mb-0">
+                <i class="bi bi-info-circle"></i> Информация для контент-менеджера
+            </h6>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-6">
+                    <p><strong>ID записи:</strong> {{post.id}}</p>
+                    <p><strong>Статус:</strong> {{ post.get_status_display }}</p>
+                    <p><strong>Автор:</strong> {{ post.author.get_full_name|default:post.author.email }}</p>
+                </div>
+                <div class="col-md-6">
+                    <p><strong>Создано:</strong> {{ post.created_at|date:"d.m.Y H:i" }}</p>
+                    <p><strong>Обновлено:</strong> {{post.updated_at|date:"d.m.Y H:i" }}</p>
+                    {% if post.published_at %}
+                    <p><strong>Опубликовано:</strong> {{post.published_at|date:"d.m.Y H:i" }}</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
     <div class="mt-4">
         <a href="{% url 'blog:post_list' %}" class="btn btn-outline-primary">
             <i class="bi bi-arrow-left"></i> Назад к списку
         </a>
+
+        <!-- Ссылка для автора на свои записи -->
+        {% if user.is_authenticated and post.author == user %}
+        <a href="{% url 'blog:my_posts' %}" class="btn btn-outline-info ms-2">
+            <i class="bi bi-list"></i> Мои записи
+        </a>
+        {% endif %}
+
+        <!-- Ссылка для контент-менеджеров на все записи -->
+        {% if perms.blog.can_edit_all_blogposts %}
+        <a href="{% url 'blog:post_list' %}?all=true" class="btn btn-outline-secondary ms-2">
+            <i class="bi bi-grid"></i> Все записи
+        </a>
+        {% endif %}
     </div>
 </article>
+
+<!-- Предупреждение для автора о статусе записи -->
+{% if user.is_authenticated and post.author == user and not post.is_published %}
+<div class="alert alert-warning mt-3">
+    <i class="bi bi-exclamation-triangle"></i>
+    <strong>Ваша запись находится в статусе "{{post.get_status_display}}".</strong><br>
+    После завершения редактирования обратитесь к контент-менеджеру для публикации.
+</div>
+{% endif %}
+
+<!-- Предупреждение для модераторов продуктов -->
+{% if user.is_authenticated and perms.catalog.can_unpublish_product and not perms.blog.can_edit_all_blogposts %}
+<div class="alert alert-info mt-3">
+    <i class="bi bi-shield-exclamation"></i>
+    <strong>Внимание:</strong> Вы являетесь модератором продуктов, но не имеете прав для управления контентом блога.<br>
+    Для редактирования записей блога обратитесь к контент-менеджеру.
+</div>
+{% endif %}
 {% endblock %}

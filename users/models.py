@@ -3,6 +3,8 @@ from django.db import models
 from django.utils.translation import gettext_lazy as _
 from phonenumber_field.modelfields import PhoneNumberField
 
+from users.managers import UserManager
+
 
 class User(AbstractUser):
     # Делаем email уникальным идентификатором вместо username
@@ -18,6 +20,8 @@ class User(AbstractUser):
 
     USERNAME_FIELD = "email"
     REQUIRED_FIELDS = []
+
+    objects = UserManager()
 
     class Meta:
         verbose_name = _("Пользователь")

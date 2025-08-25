@@ -1,24 +1,140 @@
 {% extends 'base.html' %}
-{% load my_tags %}
-{% block title %}{{ product.name }}{% endblock %}
-{% block content %}
+{% load static %}
 
-<div class="container py-5">
-    <h1 class="mb-4 text-center">Каталог</h1>
-    <div class="container mt-4">
-        <div class="row">
-            <div class="col-md-6">
-                <div class="card">
-                    <img src="{{ product.image | media_filter }}" class="card-img-top img-fluid" alt="{{ product.name }}">
-                </div>
+{% block title %}{{ object.name }}{% endblock %}
+
+{% block breadcrumbs_items %}
+<li class="breadcrumb-item"><a href="{% url 'catalog:product_detail' object.pk %}">{{ object.name|truncatechars:20 }}</a></li>
+{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-4">
+        {% if object.image %}
+        <img src="{{ object.image.url }}" class="img-fluid rounded mb-3" alt="{{ object.name }}">
+        {% else %}
+        <div class="bg-light p-5 text-center mb-3">
+            <i class="bi bi-image" style="font-size: 3rem;"></i>
+            <p class="mt-2">Нет изображения</p>
+        </div>
+        {% endif %}
+    </div>
+    <div class="col-md-8">
+        <h1>{{ object.name }}</h1>
+
+        <!-- Отображение статуса публикации -->
+        <div class="mb-2">
+            <span class="badge bg-{% if object.publication_status == 'published' %}success{% elif object.publication_status == 'draft' %}secondary{% elif object.publication_status == 'review' %}warning{% else %}danger{% endif %}">
+                {{ object.get_publication_status_display }}
+            </span>
+            {% if object.is_published %}
+            <span class="badge bg-success">Опубликовано</span>
+            {% endif %}
+        </div>
+
+        <div class="d-flex justify-content-between mb-3">
+            <div>
+                <span class="h3 text-primary">{{ object.price }} ₽</span>
+                {% if object.old_price %}
+                <span class="text-decoration-line-through text-muted ms-2">{{ object.old_price }} ₽</span>
+                {% endif %}
             </div>
-            <div class="col-md-6">
-                <h3>Описание</h3>
-                <p>{{ product.description }}</p>
-                <p class="text-muted">Цена: {{product.price}} руб.</p>
-                <a href="{% url 'catalog:home' %}" class="btn btn-secondary">Назад в каталог</a>
+            <span class="badge bg-{% if object.in_stock %}success{% else %}danger{% endif %}">
+                {% if object.in_stock %}В наличии ({{object.stock}} шт.){% else %}Нет в наличии{% endif %}
+            </span>
+        </div>
+
+        <div class="card mb-3">
+            <div class="card-body">
+                <h5 class="card-title">Описание</h5>
+                <p class="card-text">{{ object.description|default:"Описание отсутствует" }}</p>
             </div>
         </div>
+
+        <div class="row mb-3">
+            <div class="col-md-6">
+                <p><strong>Категория:</strong> {{object.category|default:"Не указана"}}</p>
+                <p><strong>Бренд:</strong> {{object.brand|default:"Не указан"}}</p>
+            </div>
+            <div class="col-md-6">
+                <p><strong>Вес:</strong> {{object.weight|default:"Не указан"}} кг</p>
+                <p><strong>Размеры:</strong> {{object.dimensions|default:"Не указаны"}}</p>
+            </div>
+        </div>
+
+        <div class="btn-group mb-3">
+            <!-- Проверка права на изменение продукта -->
+            {% if perms.catalog.change_product %}
+            <a href="{% url 'catalog:product_update' object.pk %}" class="btn btn-primary">
+                <i class="bi bi-pencil"></i> Редактировать
+            </a>
+            {% endif %}
+
+            <!-- Проверка права на удаление продукта -->
+            {% if perms.catalog.delete_product %}
+            <a href="{% url 'catalog:product_delete' object.pk %}" class="btn btn-danger">
+                <i class="bi bi-trash"></i> Удалить
+            </a>
+            {% endif %}
+
+            <a href="{% url 'catalog:catalog' %}" class="btn btn-outline-secondary">
+                <i class="bi bi-arrow-left"></i> Назад
+            </a>
+        </div>
+
+        <!-- Модерационные действия -->
+        {% if perms.catalog.can_unpublish_product or perms.catalog.can_change_publication_status %}
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">Модерационные действия</h5>
+            </div>
+            <div class="card-body">
+                <div class="btn-group">
+                    <!-- Снятие с публикации -->
+                    {% if perms.catalog.can_unpublish_product and object.is_published %}
+                    <form method="post" action="{% url 'catalog:product_unpublish' object.pk %}" class="d-inline">
+                        {% csrf_token %}
+                        <button type="submit" class="btn btn-warning">
+                            <i class="bi bi-eye-slash"></i> Снять с публикации
+                        </button>
+                    </form>
+                    {% endif %}
+
+                    <!-- Публикация -->
+                    {% if perms.catalog.can_change_publication_status and not object.is_published %}
+                    <form method="post" action="{% url 'catalog:product_publish' object.pk %}" class="d-inline">
+                        {% csrf_token %}
+                        <button type="submit" class="btn btn-success">
+                            <i class="bi bi-eye"></i> Опубликовать
+                        </button>
+                    </form>
+                    {% endif %}
+
+                    <!-- Изменение статуса через dropdown -->
+                    {% if perms.catalog.can_change_publication_status %}
+                    <div class="btn-group">
+                        <button type="button" class="btn btn-info dropdown-toggle" data-bs-toggle="dropdown">
+                            <i class="bi bi-gear"></i> Изменить статус
+                        </button>
+                        <ul class="dropdown-menu">
+                            {% for value, label in object.PUBLICATION_STATUS %}
+                            <li>
+                                <form method="post" action="{% url 'catalog:product_change_status' object.pk %}">
+                                    {% csrf_token %}
+                                    <input type="hidden" name="status" value="{{ value }}">
+                                    <button type="submit" class="dropdown-item {% if object.publication_status == value %}active{% endif %}">
+                                        {{ label }}
+                                    </button>
+                                </form>
+                            </li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        {% endif %}
     </div>
 </div>
 {% endblock %}

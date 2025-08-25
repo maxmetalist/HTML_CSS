@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load static %}
 
 {% block title %}{{ object.name }}{% endblock %}
 
@@ -21,9 +22,33 @@
     <div class="col-md-8">
         <h1>{{ object.name }}</h1>
 
+        <!-- Отображение статуса публикации -->
+        <div class="mb-2">
+            <span class="badge bg-{% if object.publication_status == 'published' %}success{% elif object.publication_status == 'draft' %}secondary{% elif object.publication_status == 'review' %}warning{% else %}danger{% endif %}">
+                {{ object.get_publication_status_display }}
+            </span>
+            {% if object.is_published %}
+            <span class="badge bg-success">Опубликовано</span>
+            {% endif %}
+
+            <!-- Отображение владельца -->
+            {% if object.owner %}
+            <span class="badge bg-info ms-1" title="Владелец продукта">
+                <i class="bi bi-person"></i> {{ object.owner.email }}
+            </span>
+            {% endif %}
+
+            <!-- Индикатор своего продукта -->
+            {% if object.owner == user %}
+            <span class="badge bg-primary ms-1">
+                <i class="bi bi-star"></i> Мой продукт
+            </span>
+            {% endif %}
+        </div>
+
         <div class="d-flex justify-content-between mb-3">
             <div>
-                <span class="h3 text-primary">{{ object.Price }} ₽</span>
+                <span class="h3 text-primary">{{ object.price }} ₽</span>
                 {% if object.old_price %}
                 <span class="text-decoration-line-through text-muted ms-2">{{ object.old_price }} ₽</span>
                 {% endif %}
@@ -44,24 +69,126 @@
             <div class="col-md-6">
                 <p><strong>Категория:</strong> {{object.category|default:"Не указана"}}</p>
                 <p><strong>Бренд:</strong> {{object.brand|default:"Не указан"}}</p>
+                <p><strong>Владелец:</strong>
+                    {% if object.owner %}
+                        {{ object.owner.email }}
+                        {% if object.owner == user %}
+                            <span class="text-success">(Вы)</span>
+                        {% endif %}
+                    {% else %}
+                        Не указан
+                    {% endif %}
+                </p>
             </div>
             <div class="col-md-6">
                 <p><strong>Вес:</strong> {{object.weight|default:"Не указан"}} кг</p>
                 <p><strong>Размеры:</strong> {{object.dimensions|default:"Не указаны"}}</p>
+                <p><strong>Создан:</strong> {{object.created_at|date:"d.m.Y H:i"}}</p>
             </div>
         </div>
 
-        <div class="btn-group">
+        <div class="btn-group mb-3">
+            <!-- Проверка права на изменение продукта + проверка владельца -->
+            {% if perms.catalog.change_product and object.owner == user or perms.catalog.can_change_publication_status %}
             <a href="{% url 'catalog:product_update' object.pk %}" class="btn btn-primary">
                 <i class="bi bi-pencil"></i> Редактировать
             </a>
-            <a href="{% url 'catalog:product_delete' object.pk %}" class="btn btn-danger">
+            {% endif %}
+
+            <!-- Проверка права на удаление продукта + проверка владельца или модератора -->
+            {% if object.owner == user or perms.catalog.can_delete_any_product %}
+            <a href="{% url 'catalog:product_delete' object.pk %}" class="btn btn-danger"
+               onclick="return confirm('Вы уверены, что хотите удалить продукт «{{ object.name }}»?')">
                 <i class="bi bi-trash"></i> Удалить
             </a>
+            {% endif %}
+
             <a href="{% url 'catalog:catalog' %}" class="btn btn-outline-secondary">
                 <i class="bi bi-arrow-left"></i> Назад
             </a>
         </div>
+
+        <!-- Модерационные действия - показываем только модераторам -->
+        {% if perms.catalog.can_unpublish_product or perms.catalog.can_change_publication_status %}
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="bi bi-shield-check"></i> Модерационные действия
+                    {% if object.owner != user %}
+                    <span class="badge bg-warning ms-2">Чужой продукт</span>
+                    {% endif %}
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="btn-group">
+                    <!-- Снятие с публикации -->
+                    {% if perms.catalog.can_unpublish_product and object.publication_status == 'published' %}
+                    <form method="post" action="{% url 'catalog:product_unpublish' object.pk %}" class="d-inline">
+                        {% csrf_token %}
+                        <button type="submit" class="btn btn-warning"
+                                onclick="return confirm('Снять продукт «{{ object.name }}» с публикации?')">
+                            <i class="bi bi-eye-slash"></i> Снять с публикации
+                        </button>
+                    </form>
+                    {% endif %}
+
+                    <!-- Публикация -->
+                    {% if perms.catalog.can_change_publication_status and object.publication_status != 'published' %}
+                    <form method="post" action="{% url 'catalog:product_publish' object.pk %}" class="d-inline">
+                        {% csrf_token %}
+                        <button type="submit" class="btn btn-success"
+                                onclick="return confirm('Опубликовать продукт «{{ object.name }}»?')">
+                            <i class="bi bi-eye"></i> Опубликовать
+                        </button>
+                    </form>
+                    {% endif %}
+
+                    <!-- Изменение статуса через dropdown -->
+                    {% if perms.catalog.can_change_publication_status %}
+                    <div class="btn-group">
+                        <button type="button" class="btn btn-info dropdown-toggle" data-bs-toggle="dropdown">
+                            <i class="bi bi-gear"></i> Изменить статус
+                        </button>
+                        <ul class="dropdown-menu">
+                            {% for value, label in object.PUBLICATION_STATUS %}
+                            <li>
+                                <form method="post" action="{% url 'catalog:product_change_status' object.pk %}">
+                                    {% csrf_token %}
+                                    <input type="hidden" name="status" value="{{ value }}">
+                                    <button type="submit" class="dropdown-item {% if object.publication_status == value %}active{% endif %}"
+                                            onclick="return confirm('Изменить статус на «{{ label }}»?')">
+                                        {{ label }}
+                                    </button>
+                                </form>
+                            </li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+                    {% endif %}
+                </div>
+
+                <!-- Информация для модераторов -->
+                <div class="mt-3 p-2 bg-light rounded small">
+                    <strong>Информация для модератора:</strong><br>
+                    Владелец: {{ object.owner.email|default:"Не указан" }}<br>
+                    ID продукта: {{object.id}}<br>
+                    Создан: {{ object.created_at|date:"d.m.Y H:i" }}<br>
+                    Обновлен: {{ object.updated_at|date:"d.m.Y H:i" }}
+                </div>
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Предупреждение для обычных пользователей при просмотре чужого продукта -->
+        {% if object.owner != user and not perms.catalog.can_unpublish_product %}
+        <div class="alert alert-info mt-3">
+            <i class="bi bi-info-circle"></i>
+            Это продукт другого пользователя. Вы можете только просматривать его.
+            {% if not object.is_published %}
+            <br><strong>Внимание:</strong> Этот продукт не опубликован и недоступен для покупки.
+            {% endif %}
+        </div>
+        {% endif %}
     </div>
 </div>
 {% endblock %}

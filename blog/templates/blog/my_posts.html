@@ -1,0 +1,78 @@
+{% extends "blog/base_blog.html" %}
+
+{% block blog_content %}
+<h1 class="mb-4">Мои записи</h1>
+
+<div class="alert alert-info mb-3">
+    <i class="bi bi-info-circle"></i>
+    Здесь отображаются все ваши записи, включая черновики и неопубликованные.
+</div>
+
+{% if posts %}
+    <div class="row">
+        {% for post in posts %}
+            <div class="col-md-6 mb-4">
+                <div class="card h-100">
+                    {% if post.preview %}
+                    <img src="{{ post.preview.url }}" class="card-img-top" alt="{{ post.title }}">
+                    {% endif %}
+                    <div class="card-body">
+                        <h5 class="card-title">
+                            <a href="{% url 'blog:post_detail' post.pk %}">{{ post.title }}</a>
+                            {% if not post.is_published %}
+                            <span class="badge bg-warning ms-1">Черновик</span>
+                            {% endif %}
+                        </h5>
+                        <p class="card-text">{{ post.content|truncatewords:30 }}</p>
+                    </div>
+                    <div class="card-footer">
+                        <small class="text-muted">
+                            <i class="bi bi-calendar"></i> {{ post.created_at|date:"d.m.Y H:i" }} |
+                            <i class="bi bi-eye"></i> {{ post.views_count }} |
+                            Статус: {{ post.get_status_display }}
+                        </small>
+                    </div>
+                </div>
+            </div>
+        {% endfor %}
+    </div>
+
+    {% if is_paginated %}
+    <nav aria-label="Page navigation">
+        <ul class="pagination justify-content-center">
+            {% if page_obj.has_previous %}
+            <li class="page-item">
+                <a class="page-link" href="?page={{ page_obj.previous_page_number }}">&laquo;</a>
+            </li>
+            {% endif %}
+
+            {% for num in page_obj.paginator.page_range %}
+            <li class="page-item {% if num == page_obj.number %}active{% endif %}">
+                <a class="page-link" href="?page={{ num }}">{{ num }}</a>
+            </li>
+            {% endfor %}
+
+            {% if page_obj.has_next %}
+            <li class="page-item">
+                <a class="page-link" href="?page={{ page_obj.next_page_number }}">&raquo;</a>
+            </li>
+            {% endif %}
+        </ul>
+    </nav>
+    {% endif %}
+{% else %}
+    <div class="alert alert-warning">
+        <i class="bi bi-exclamation-triangle"></i>
+        У вас пока нет записей. <a href="{% url 'blog:post_create' %}">Создайте первую запись</a>.
+    </div>
+{% endif %}
+
+<div class="mt-3">
+    <a href="{% url 'blog:post_list' %}" class="btn btn-outline-primary">
+        <i class="bi bi-arrow-left"></i> Назад ко всем записям
+    </a>
+    <a href="{% url 'blog:post_create' %}" class="btn btn-success ms-2">
+        <i class="bi bi-plus-circle"></i> Создать новую запись
+    </a>
+</div>
+{% endblock %}
