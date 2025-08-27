@@ -1,0 +1,180 @@
+{% extends 'base.html' %}
+
+{% block title %}Продукты в категории {{ category.name }}{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <!-- Заголовок категории -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="{% url 'catalog:home' %}">Главная</a></li>
+                    <li class="breadcrumb-item"><a href="{% url 'catalog:product_list' %}">Каталог</a></li>
+                    <li class="breadcrumb-item active">{{ category.name }}</li>
+                </ol>
+            </nav>
+
+            <h1 class="display-4">{{ category.name }}</h1>
+
+            {% if category.description %}
+                <p class="lead">{{ category.description }}</p>
+            {% endif %}
+
+            <!-- Статистика -->
+            {% if stats %}
+            <div class="row mt-3">
+                <div class="col-md-3">
+                    <div class="card bg-light">
+                        <div class="card-body text-center">
+                            <h5 class="card-title">{{ stats.total_products }}</h5>
+                            <p class="card-text">Всего товаров</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card bg-light">
+                        <div class="card-body text-center">
+                            <h5 class="card-title">{{ stats.published_products }}</h5>
+                            <p class="card-text">Опубликовано</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card bg-light">
+                        <div class="card-body text-center">
+                            <h5 class="card-title">{{ stats.available_products }}</h5>
+                            <p class="card-text">В наличии</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card bg-light">
+                        <div class="card-body text-center">
+                            <h5 class="card-title">{{ stats.avg_price|floatformat:2 }} ₽</h5>
+                            <p class="card-text">Средняя цена</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Фильтры и сортировка -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-body">
+                    <form id="filter-form" method="get" class="row g-3">
+                        <div class="col-md-3">
+                            <label class="form-label">Сортировка:</label>
+                            <select name="sort_by" class="form-select" onchange="this.form.submit()">
+                                <option value="name" {% if filters.sort_by =='name' %}selected{% endif %}>По названию</option>
+                                <option value="price_asc" {% if filters.sort_by =='price_asc' %}selected{% endif %}>Цена по возрастанию</option>
+                                <option value="price_desc" {% if filters.sort_by =='price_desc' %}selected{% endif %}>Цена по убыванию</option>
+                                <option value="newest" {% if filters.sort_by =='newest' %}selected{% endif %}>Сначала новые</option>
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" name="in_stock" value="true"
+                                       id="in_stock" {% if filters.in_stock %}checked{% endif %} onchange="this.form.submit()">
+                                <label class="form-check-label" for="in_stock">Только в наличии</label>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label">Цена от:</label>
+                            <input type="number" name="min_price" class="form-control"
+                                   value="{{ filters.min_price }}" placeholder="Мин. цена">
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label">Цена до:</label>
+                            <input type="number" name="max_price" class="form-control"
+                                   value="{{ filters.max_price }}" placeholder="Макс. цена">
+                        </div>
+                        <div class="col-12">
+                            <button type="submit" class="btn btn-primary">Применить фильтры</button>
+                            <a href="?{% for key, value in request.GET.items %}{% if key != 'page' %}{{ key }}={{ value }}&{% endif %}{% endfor %}" class="btn btn-secondary">Сбросить</a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Информация о результатах -->
+    <div class="row mb-3">
+        <div class="col-12">
+            <p class="text-muted">
+                Найдено товаров: <strong>{{ filtered_count }}</strong> из {{ total_count }}
+                {% if filters.in_stock or filters.min_price or filters.max_price %}
+                    (с применением фильтров)
+                {% endif %}
+            </p>
+        </div>
+    </div>
+
+    <!-- Сетка продуктов -->
+    <div id="products-container">
+    </div>
+
+    <!-- Пагинация -->
+    {% if products_page.has_other_pages %}
+    <nav aria-label="Page navigation" class="mt-4">
+        <ul class="pagination justify-content-center">
+            {% if products_page.has_previous %}
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ products_page.previous_page_number }}{% for key, value in filters.items %}&{{ key }}={{ value }}{% endfor %}">
+                        Назад
+                    </a>
+                </li>
+            {% else %}
+                <li class="page-item disabled">
+                    <span class="page-link">Назад</span>
+                </li>
+            {% endif %}
+
+            {% for num in products_page.paginator.page_range %}
+                {% if products_page.number == num %}
+                    <li class="page-item active">
+                        <span class="page-link">{{ num }}</span>
+                    </li>
+                {% else %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ num }}{% for key, value in filters.items %}&{{ key }}={{ value }}{% endfor %}">{{ num }}</a>
+                    </li>
+                {% endif %}
+            {% endfor %}
+
+            {% if products_page.has_next %}
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ products_page.next_page_number }}{% for key, value in filters.items %}&{{ key }}={{ value }}{% endfor %}">
+                        Вперед
+                    </a>
+                </li>
+            {% else %}
+                <li class="page-item disabled">
+                    <span class="page-link">Вперед</span>
+                </li>
+            {% endif %}
+        </ul>
+    </nav>
+    {% endif %}
+</div>
+
+<style>
+.product-card {
+    transition: transform 0.2s ease-in-out;
+    height: 100%;
+}
+.product-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+}
+.card-img-top {
+    height: 200px;
+    object-fit: cover;
+}
+</style>
+{% endblock %}
