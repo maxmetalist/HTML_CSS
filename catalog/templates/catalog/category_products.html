@@ -70,10 +70,10 @@
                         <div class="col-md-3">
                             <label class="form-label">Сортировка:</label>
                             <select name="sort_by" class="form-select" onchange="this.form.submit()">
-                                <option value="name" {% if filters.sort_by =='name' %}selected{% endif %}>По названию</option>
-                                <option value="price_asc" {% if filters.sort_by =='price_asc' %}selected{% endif %}>Цена по возрастанию</option>
-                                <option value="price_desc" {% if filters.sort_by =='price_desc' %}selected{% endif %}>Цена по убыванию</option>
-                                <option value="newest" {% if filters.sort_by =='newest' %}selected{% endif %}>Сначала новые</option>
+                                <option value="name" {% if filters.sort_by == 'name' %}selected{% endif %}>По названию</option>
+                                <option value="price_asc" {% if filters.sort_by == 'price_asc' %}selected{% endif %}>Цена по возрастанию</option>
+                                <option value="price_desc" {% if filters.sort_by == 'price_desc' %}selected{% endif %}>Цена по убыванию</option>
+                                <option value="newest" {% if filters.sort_by == 'newest' %}selected{% endif %}>Сначала новые</option>
                             </select>
                         </div>
                         <div class="col-md-3">

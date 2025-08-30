@@ -1,0 +1,30 @@
+{% extends 'catalog/base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="container mt-4">
+    <h1>Результаты поиска: "{{ search_term }}"</h1>
+
+    {% if products %}
+        <p>Найдено товаров: {{ total_results }}</p>
+
+        <div class="row">
+            {% for product in products %}
+            <div class="col-md-3 mb-3">
+                <div class="card h-100">
+                    {% if product.image %}
+                    <img src="{{ product.image.url }}" class="card-img-top" alt="{{ product.name }}">
+                    {% endif %}
+                    <div class="card-body">
+                        <h5 class="card-title">{{ product.name }}</h5>
+                        <p class="card-text">{{ product.price }} руб.</p>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    {% else %}
+        <p>Товары не найдены.</p>
+    {% endif %}
+</div>
+{% endblock %}

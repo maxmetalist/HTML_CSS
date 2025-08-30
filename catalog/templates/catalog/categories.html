@@ -9,7 +9,7 @@
     <link href="{% static 'style.css' %}" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
 </head>
-    <body>
+<body>
     {% include 'includes/sidebar.html' %}
 
     <main class="content">
@@ -58,19 +58,27 @@
                 <div class="col-12">
                     <div class="card">
                         <div class="card-body">
-                            <div class="row g-3 align-items-center">
-                                <div class="col-md-8">
-                                    <input type="text" class="form-control" id="categorySearch"
-                                           placeholder="Поиск по категориям..." onkeyup="filterCategories()">
+                            <form id="categorySearchForm" method="GET" action="{% url 'catalog:category_products' %}">
+                                <div class="row g-3 align-items-center">
+                                    <div class="col-md-8">
+                                        <div class="input-group">
+                                            <input type="text" class="form-control" id="categorySearch"
+                                                   name="search" placeholder="Поиск по категориям..."
+                                                   onkeyup="filterCategories()">
+                                            <button type="submit" class="btn btn-primary">
+                                                <i class="bi bi-search me-1"></i>Найти
+                                            </button>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <select class="form-select" name="sort" onchange="sortCategories(this.value)">
+                                            <option value="name">Сортировка по названию</option>
+                                            <option value="products">Сортировка по количеству товаров</option>
+                                            <option value="newest">Сначала новые</option>
+                                        </select>
+                                    </div>
                                 </div>
-                                <div class="col-md-4">
-                                    <select class="form-select" onchange="sortCategories(this.value)">
-                                        <option value="name">Сортировка по названию</option>
-                                        <option value="products">Сортировка по количеству товаров</option>
-                                        <option value="newest">Сначала новые</option>
-                                    </select>
-                                </div>
-                            </div>
+                            </form>
                         </div>
                     </div>
                 </div>
@@ -78,7 +86,38 @@
 
             <!-- Сетка категорий -->
             <div class="categories-grid" id="categoriesContainer">
+                {% for category in categories %}
+                <div class="category-card">
+                    <div class="category-content">
+                        {% if category.image %}
+                        <img src="{{ category.image.url }}" alt="{{ category.name }}" class="category-image">
+                        {% else %}
+                        <div class="category-image-placeholder">
+                            <i class="bi bi-folder"></i>
+                        </div>
+                        {% endif %}
+                        <div class="category-info">
+                            <h5 class="category-title">{{ category.name }}</h5>
+                            <p class="category-count">{{ category.product_count }} товаров</p>
+                            <p class="category-description">{{ category.description|truncatewords:10 }}</p>
+                        </div>
+                        <div class="category-actions">
+                            <!-- Кнопка ведет прямо на страницу категории -->
+                            <a href="{% url 'catalog:category_detail' category.slug %}"
+                               class="btn btn-sm btn-outline-primary">
+                                <i class="bi bi-eye me-1"></i>Показать товары
+                            </a>
+                            <!-- Стрелка тоже ведет на страницу категории -->
+                            <a href="{% url 'catalog:category_detail' category.slug %}"
+                               class="btn btn-sm btn-outline-secondary">
+                                <i class="bi bi-arrow-right"></i>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
             </div>
+
             <!-- Информационный блок -->
             <div class="row mt-5">
                 <div class="col-12">
@@ -141,6 +180,9 @@
             </div>
             {% endif %}
 
+        </div>
+    </main>
+
     <script src="{% static 'js/bootstrap.bundle.min.js' %}"></script>
-    </body>
+</body>
 </html>

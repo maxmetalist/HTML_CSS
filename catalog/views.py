@@ -1,20 +1,17 @@
 from django.contrib import messages
 from django.core.cache import cache
 from django.core.exceptions import PermissionDenied
-from django.core.paginator import Paginator
-from django.db.models import Count, Q, Max
+from django.db.models import Count, Q
 from django.forms import HiddenInput
 from django.http import HttpResponse
 from django.shortcuts import redirect, render, get_object_or_404
 from django.urls import reverse_lazy
-from django.utils import timezone
 from django.views import View
 from django.views.generic import ListView, DetailView, TemplateView, CreateView, UpdateView, DeleteView
 from django.contrib.auth.mixins import LoginRequiredMixin, PermissionRequiredMixin
 from catalog.forms import ProductForm
 from catalog.mixins import OwnerOrModeratorRequiredMixin
 from catalog.models import Contact, Product, Category
-from catalog.services import get_category_products_paginated, get_category_stats
 
 
 class HomeView(TemplateView):
@@ -83,87 +80,27 @@ class ProductListView(ListView):
     template_name = "catalog/product_list.html"
     context_object_name = "products"
     paginate_by = 10
-    cache_timeout = 300  # 5 минут кеширования
 
     def get_queryset(self):
-        """Кешированный queryset продуктов"""
-        cache_key = self.get_cache_key()
-        queryset = cache.get(cache_key)
-
-        if queryset is None:
-            queryset = self.get_uncached_queryset()
-            # Кешируем на 5 минут
-            cache.set(cache_key, queryset, self.cache_timeout)
-
-        return queryset
-
-    def get_uncached_queryset(self):
-        """Получение некешированного queryset"""
         return Product.objects.filter(
             publication_status='published',
             is_published=True
-        ).select_related('category', 'owner').prefetch_related('images').order_by("name", "created_at")
-
-    def get_cache_key(self):
-        """Генерация уникального ключа кеша на основе параметров запроса"""
-        params = {
-            'page': self.request.GET.get('page', 1),
-            'sort': self.request.GET.get('sort', ''),
-            'search': self.request.GET.get('search', ''),
-            'category': self.request.GET.get('category', ''),
-            'in_stock': self.request.GET.get('in_stock', ''),
-        }
-        return f'product_list_{hash(frozenset(params.items()))}'
+        ).select_related('category', 'owner').order_by("name", "created_at")
 
     def get_context_data(self, **kwargs):
-        """Кешированный контекст"""
-        context_cache_key = f'product_list_context_{self.get_cache_key()}'
-        cached_context = cache.get(context_cache_key)
-
-        if cached_context is None:
-            context = super().get_context_data(**kwargs)
-            # Добавляем дополнительную информацию в контекст
-            context.update(self.get_extra_context())
-            # Кешируем контекст
-            cache.set(context_cache_key, context, self.cache_timeout)
-            return context
-
-        return cached_context
-
-    def get_extra_context(self):
-        """Дополнительный контекст для страницы"""
-        return {
+        context = super().get_context_data(**kwargs)
+        context.update({
             'can_unpublish': self.request.user.has_perm('catalog.can_unpublish_product'),
             'can_delete_any': self.request.user.has_perm('catalog.can_delete_any_product'),
             'can_change_publication_status': self.request.user.has_perm('catalog.can_change_publication_status'),
-            'categories': self.get_categories(),
-            'total_products_count': self.get_total_products_count(),
-        }
-
-    def get_categories(self):
-        """Кешированный список категорий"""
-        cache_key = 'all_categories_list'
-        categories = cache.get(cache_key)
-
-        if categories is None:
-            categories = Category.objects.annotate(
+            'categories': Category.objects.annotate(
                 product_count=Count('products', filter=Q(products__publication_status='published'))
-            ).filter(product_count__gt=0).order_by('name')
-            cache.set(cache_key, categories, 3600)  # 1 час
-        return categories
-
-    def get_total_products_count(self):
-        """Кешированное общее количество продуктов"""
-        cache_key = 'total_published_products_count'
-        count = cache.get(cache_key)
-
-        if count is None:
-            count = Product.objects.filter(
-                publication_status='published',
-                is_published=True
-            ).count()
-            cache.set(cache_key, count, 3600)  # 1 час
-        return count
+            ).filter(product_count__gt=0).order_by('name'),
+            'total_products_count': Product.objects.filter(
+                publication_status='published', is_published=True
+            ).count(),
+        })
+        return context
 
 
 class ProductDetailView(DetailView):
@@ -254,16 +191,13 @@ class ProductUpdateView(LoginRequiredMixin, PermissionRequiredMixin, UpdateView)
         return form
 
 
-class ProductDeleteView(LoginRequiredMixin, DeleteView, OwnerOrModeratorRequiredMixin,):
+class ProductDeleteView(LoginRequiredMixin, OwnerOrModeratorRequiredMixin,  DeleteView,):
     login_url = "/users/login/"
     model = Product
     template_name = "catalog/product_confirm_delete.html"
     success_url = reverse_lazy("product_list")
     context_object_name = "product"
 
-    def __init__(self, **kwargs):
-        super().__init__(kwargs)
-        self.object = None
 
     def delete(self, request, *args, **kwargs):
         self.object = self.get_object()
@@ -399,53 +333,61 @@ class ProductChangeStatusView(LoginRequiredMixin, PermissionRequiredMixin, View)
 
 class CategoryProductsView(ListView):
     """
-    Контроллер для отображения продуктов по категории
+    Контроллер для отображения продуктов по конкретной категории
     """
     template_name = "catalog/category_products.html"
-    context_object_name = "products_page"
+    context_object_name = "products"
     paginate_by = 12
 
     def get_queryset(self):
         category_slug = self.kwargs['category_slug']
-        result = get_category_products_paginated(
-            category_slug=category_slug,
-            page_number=self.request.GET.get('page', 1),
-            user=self.request.user,
-            filters=self.get_filters()
-        )
+        try:
+            category = Category.objects.get(slug=category_slug)
+            products = Product.objects.filter(
+                category=category,
+                publication_status='published',
+                is_published=True
+            ).select_related('category', 'owner')
 
-        if not result:
-            return Paginator([], self.paginate_by).page(1)
+            # Добавить фильтрацию и сортировку
+            filters = self.get_filters()
+            if filters.get('in_stock') == 'true':
+                products = products.filter(in_stock=True)
 
-        return result['products_page']
+            sort_by = filters.get('sort_by', 'name')
+            if sort_by == 'price_asc':
+                products = products.order_by('price')
+            elif sort_by == 'price_desc':
+                products = products.order_by('-price')
+            elif sort_by == 'newest':
+                products = products.order_by('-created_at')
+            else:
+                products = products.order_by('name')
+
+            return products
+
+        except Category.DoesNotExist:
+            return Product.objects.none()
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        category_slug = self.kwargs['category_slug']
+        category_slug = self.kwargs.get('category_slug')
 
-        result = get_category_products_paginated(
-            category_slug=category_slug,
-            page_number=self.request.GET.get('page', 1),
-            user=self.request.user,
-            filters=self.get_filters()
-        )
-
-        if result:
+        try:
+            category = Category.objects.get(slug=category_slug)
             context.update({
-                'category': result['category'],
-                'total_count': result['total_count'],
-                'filtered_count': result['filtered_count'],
-                'filters': result['filters'],
-                'stats': get_category_stats(category_slug)['stats'] if get_category_stats(category_slug) else None
+                'category': category,
+                'total_count': self.get_queryset().count(),
+                'filters': self.get_filters(),
             })
-        else:
-            category = get_object_or_404(Category, slug=category_slug)
-            context['category'] = category
-            context['total_count'] = 0
-            context['filtered_count'] = 0
+            context.update(self.get_permission_context())
 
-        # Добавляем информацию о правах пользователя
-        context.update(self.get_permission_context())
+        except Category.DoesNotExist:
+            context.update({
+                'category': None,
+                'total_count': 0,
+                'filters': {}
+            })
 
         return context
 
@@ -454,7 +396,7 @@ class CategoryProductsView(ListView):
         Извлечение параметров фильтрации из запроса
         """
         filters = {}
-        filter_params = ['in_stock', 'min_price', 'max_price', 'brand', 'sort_by']
+        filter_params = ['in_stock', 'sort_by']
 
         for param in filter_params:
             value = self.request.GET.get(param)
@@ -474,46 +416,51 @@ class CategoryProductsView(ListView):
         }
 
 
-class CategoryMixin:
+class CategoryProductsSearchView(ListView):
     """
-    Миксин для общих методов работы с категориями
+    Контроллер для поиска товаров по ВСЕМ категориям
     """
+    template_name = "catalog/category_products_search.html"
+    context_object_name = "products"
+    paginate_by = 12
 
-    def get_category_stats(self):
-        """
-        Получение статистики по категориям с кэшированием
-        """
-        cache_key = 'category_stats_global'
-        stats = cache.get(cache_key)
+    def get_queryset(self):
+        search_term = self.request.GET.get('search', '').strip()
 
-        if stats is None:
-            stats = {
-                'total_products': Product.objects.filter(
-                    publication_status='published'
-                ).count(),
-                'published_products': Product.objects.filter(
-                    publication_status='published',
-                    is_published=True
-                ).count(),
-                'available_products': Product.objects.filter(
-                    publication_status='published',
-                    in_stock=True,
-                    stock__gt=0
-                ).count(),
-                'total_categories': Category.objects.annotate(
-                    product_count=Count('products', filter=Q(products__publication_status='published'))
-                ).filter(product_count__gt=0).count()
-            }
-            # Кэшируем на 5 минут
-            cache.set(cache_key, stats, 300)
+        if not search_term:
+            return Product.objects.none()
 
-        return stats
+        # Поиск по всем опубликованным товарам
+        products = Product.objects.filter(
+            publication_status='published',
+            is_published=True
+        ).filter(
+            Q(name__icontains=search_term) |
+            Q(description__icontains=search_term) |
+            Q(category__name__icontains=search_term) |
+            Q(brand__icontains=search_term)
+        ).select_related('category').order_by('name')
+
+        return products
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        search_term = self.request.GET.get('search', '')
+
+        context.update({
+            'search_term': search_term,
+            'total_results': self.get_queryset().count(),
+            'categories': Category.objects.annotate(
+                product_count=Count('products', filter=Q(products__publication_status='published'))
+            ).filter(product_count__gt=0)
+        })
+
+        return context
 
 
-class CategoryListView(LoginRequiredMixin, CategoryMixin, ListView):
+class CategoryListView(LoginRequiredMixin, ListView):
     """
     Контроллер для отображения всех категорий
-    с поддержкой аутентификации
     """
     model = Category
     template_name = 'catalog/categories.html'
@@ -560,7 +507,7 @@ class CategoryListView(LoginRequiredMixin, CategoryMixin, ListView):
         return context
 
 
-class CategoryAdminListView(LoginRequiredMixin, CategoryMixin, ListView):
+class CategoryAdminListView(LoginRequiredMixin, ListView):
     """
     Контроллер для администрирования категорий
     (только для staff пользователей)

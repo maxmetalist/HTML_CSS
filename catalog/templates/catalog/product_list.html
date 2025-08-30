@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load cache %}
 
 {% block title %}Каталог товаров{% endblock %}
 
@@ -7,6 +8,7 @@
 {% endblock %}
 
 {% block content %}
+{% cache 900 product_list_full_page request.get_full_path %}
 <div class="d-flex justify-content-between align-items-center mb-4">
     <h1>Каталог товаров</h1>
 
@@ -195,4 +197,5 @@
     </ul>
 </nav>
 {% endif %}
+{% endcache %}
 {% endblock %}

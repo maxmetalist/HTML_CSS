@@ -14,7 +14,7 @@ from catalog.views import (
     ProductUpdateView,
     ProductDeleteView, ProductUnpublishView, ProductModerationListView, ProductModerationDashboard, ProductPublishView,
     ProductChangeStatusView, MassUnpublishView, CategoryProductsView, CategoryListView,
-    CategoryAdminListView,
+    CategoryAdminListView, CategoryProductsSearchView,
 )
 
 app_name = CatalogConfig.name
@@ -36,7 +36,8 @@ urlpatterns = [
     path('product/<int:pk>/change-status/', ProductChangeStatusView.as_view(), name='product_change_status'),
     path('moderation/', ProductModerationListView.as_view(), name='product_moderation'),
     path('moderation/dashboard/', ProductModerationDashboard.as_view(), name='moderation_dashboard'),
-    path('category/<slug:category_slug>/', CategoryProductsView.as_view(), name='category_products'),
+    path('category-products/', CategoryProductsSearchView.as_view(), name='category_products'),
+    path('category/<slug:category_slug>/', CategoryProductsView.as_view(), name='category_detail'),
     path('categories/', CategoryListView.as_view(), name='categories'),
     path('categories/admin/', CategoryAdminListView.as_view(), name='categories_admin'),
 ]
