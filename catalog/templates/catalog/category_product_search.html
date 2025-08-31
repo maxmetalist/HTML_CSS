@@ -3,7 +3,7 @@
 
 {% block content %}
 <div class="container mt-4">
-    <h1>Результаты поиска: "{{ search_term }}"</h1>
+    <h1>Результаты поиска: "{{search_term}}"</h1>
 
     {% if products %}
         <p>Найдено товаров: {{ total_results }}</p>
@@ -17,7 +17,7 @@
                     {% endif %}
                     <div class="card-body">
                         <h5 class="card-title">{{ product.name }}</h5>
-                        <p class="card-text">{{ product.price }} руб.</p>
+                        <p class="card-text">{{product.price}} руб.</p>
                     </div>
                 </div>
             </div>

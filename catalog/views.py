@@ -1,7 +1,7 @@
 from django.contrib import messages
 from django.core.cache import cache
 from django.core.exceptions import PermissionDenied
-from django.db.models import Count, Q
+from django.db.models import Count, Q, Avg
 from django.forms import HiddenInput
 from django.http import HttpResponse
 from django.shortcuts import redirect, render, get_object_or_404
@@ -88,7 +88,37 @@ class ProductListView(ListView):
         ).select_related('category', 'owner').order_by("name", "created_at")
 
     def get_context_data(self, **kwargs):
+        cache_key = f"product_list_context_{self.request.user.pk if self.request.user.is_authenticated else 'anon'}"
+        cached_context = cache.get(cache_key)
+
+        if cached_context is None:
+            context = super().get_context_data(**kwargs)
+
+            # Кэшируем вычисления
+            cacheable_context = {
+                'total_products_count': Product.objects.filter(
+                    publication_status='published', is_published=True
+                ).count(),
+            }
+
+            cache.set(cache_key, cacheable_context, 60 * 30)
+
+            # Добавляем данные в контекст
+            context.update(cacheable_context)
+            context.update({
+                'can_unpublish': self.request.user.has_perm('catalog.can_unpublish_product'),
+                'can_delete_any': self.request.user.has_perm('catalog.can_delete_any_product'),
+                'can_change_publication_status': self.request.user.has_perm('catalog.can_change_publication_status'),
+                'categories': Category.objects.annotate(
+                    product_count=Count('products', filter=Q(products__publication_status='published'))
+                ).filter(product_count__gt=0).order_by('name'),
+            })
+
+            return context
+
+        # Если есть кэш, обновляем контекст
         context = super().get_context_data(**kwargs)
+        context.update(cached_context)
         context.update({
             'can_unpublish': self.request.user.has_perm('catalog.can_unpublish_product'),
             'can_delete_any': self.request.user.has_perm('catalog.can_delete_any_product'),
@@ -96,10 +126,8 @@ class ProductListView(ListView):
             'categories': Category.objects.annotate(
                 product_count=Count('products', filter=Q(products__publication_status='published'))
             ).filter(product_count__gt=0).order_by('name'),
-            'total_products_count': Product.objects.filter(
-                publication_status='published', is_published=True
-            ).count(),
         })
+
         return context
 
 
@@ -339,7 +367,7 @@ class CategoryProductsView(ListView):
     context_object_name = "products"
     paginate_by = 12
 
-    def get_queryset(self):
+    def get_queryset(self, min_price=None, max_price=None):
         category_slug = self.kwargs['category_slug']
         try:
             category = Category.objects.get(slug=category_slug)
@@ -353,6 +381,11 @@ class CategoryProductsView(ListView):
             filters = self.get_filters()
             if filters.get('in_stock') == 'true':
                 products = products.filter(in_stock=True)
+
+            if min_price:
+                products = products.filter(price__gte=min_price)
+            if max_price:
+                products = products.filter(price__lte=max_price)
 
             sort_by = filters.get('sort_by', 'name')
             if sort_by == 'price_asc':
@@ -375,10 +408,40 @@ class CategoryProductsView(ListView):
 
         try:
             category = Category.objects.get(slug=category_slug)
+
+            # Получаем отфильтрованный queryset для статистики
+            filtered_products = self.get_queryset()
+
+            # Статистика
+            stats = {
+                'total_products': Product.objects.filter(
+                    category=category,
+                    publication_status='published',
+                    is_published=True
+                ).count(),
+                'published_products': Product.objects.filter(
+                    category=category,
+                    publication_status='published',
+                    is_published=True
+                ).count(),
+                'available_products': Product.objects.filter(
+                    category=category,
+                    publication_status='published',
+                    is_published=True,
+                    in_stock=True
+                ).count(),
+                'avg_price': Product.objects.filter(
+                    category=category,
+                    publication_status='published',
+                    is_published=True
+                ).aggregate(avg=Avg('price'))['avg'] or 0
+            }
             context.update({
                 'category': category,
                 'total_count': self.get_queryset().count(),
+                'filtered_count': filtered_products.count(),
                 'filters': self.get_filters(),
+                'stats': stats
             })
             context.update(self.get_permission_context())
 
@@ -386,7 +449,9 @@ class CategoryProductsView(ListView):
             context.update({
                 'category': None,
                 'total_count': 0,
-                'filters': {}
+                'filtered_count': 0,
+                'filters': {},
+                'stats': None
             })
 
         return context
@@ -396,7 +461,7 @@ class CategoryProductsView(ListView):
         Извлечение параметров фильтрации из запроса
         """
         filters = {}
-        filter_params = ['in_stock', 'sort_by']
+        filter_params = ['in_stock', 'sort_by',  'min_price', 'max_price']
 
         for param in filter_params:
             value = self.request.GET.get(param)

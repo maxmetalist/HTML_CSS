@@ -87,6 +87,7 @@
             <!-- Сетка категорий -->
             <div class="categories-grid" id="categoriesContainer">
                 {% for category in categories %}
+                {% if category.slug and not 'http' in category.slug %}
                 <div class="category-card">
                     <div class="category-content">
                         {% if category.image %}
@@ -98,23 +99,24 @@
                         {% endif %}
                         <div class="category-info">
                             <h5 class="category-title">{{ category.name }}</h5>
-                            <p class="category-count">{{ category.product_count }} товаров</p>
+                            <p class="category-count">{{category.product_count}} товаров</p>
                             <p class="category-description">{{ category.description|truncatewords:10 }}</p>
                         </div>
                         <div class="category-actions">
                             <!-- Кнопка ведет прямо на страницу категории -->
-                            <a href="{% url 'catalog:category_detail' category.slug %}"
+                            <a href="{% url 'catalog:category_products' category.slug %}"
                                class="btn btn-sm btn-outline-primary">
                                 <i class="bi bi-eye me-1"></i>Показать товары
                             </a>
                             <!-- Стрелка тоже ведет на страницу категории -->
-                            <a href="{% url 'catalog:category_detail' category.slug %}"
+                            <a href="{% url 'catalog:category_products' category.slug %}"
                                class="btn btn-sm btn-outline-secondary">
                                 <i class="bi bi-arrow-right"></i>
                             </a>
                         </div>
                     </div>
                 </div>
+                {% endif %}
                 {% endfor %}
             </div>
 
@@ -123,10 +125,10 @@
                 <div class="col-12">
                     <div class="card bg-light">
                         <div class="card-body text-center">
-                            <h4 class="card-title">Чё нет того, что надо? Да ну на!</h4>
+                            <h4 class="card-title">Чё, нет того, что надо? Да ну на!</h4>
                             <p class="card-text">
                                 Ну уж если тут этого не нашлось, то этой хрени в природе не существует. Но, если так
-                                прям сильно надо напиши мне по контакту ниже или на странице "Контакты" и я эту
+                                прям сильно надо, напиши мне по контакту ниже или на странице "Контакты" и я эту
                                 фигню из-под земли достану.
                             </p>
                             <a href="{% url 'catalog:contacts' %}" class="btn btn-outline-primary">
