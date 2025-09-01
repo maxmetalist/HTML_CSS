@@ -8,9 +8,9 @@ User = get_user_model()
 class Category(models.Model):
     """Модель категории товаров"""
 
-    objects = None
     name = models.CharField(max_length=100, verbose_name="Наименование")
     description = models.TextField(verbose_name="Описание", blank=True, null=True)
+    slug = models.SlugField(max_length=100, unique=True, verbose_name="URL", blank=True, null=True)
 
     class Meta:
         verbose_name = "категория"
@@ -19,6 +19,13 @@ class Category(models.Model):
 
     def __str__(self):
         return self.name
+
+    def save(self, *args, **kwargs):
+        # Автогенерация slug из name, если slug не указан
+        if not self.slug:
+            from django.utils.text import slugify
+            self.slug = slugify(self.name)
+        super().save(*args, **kwargs)
 
 
 class Product(models.Model):

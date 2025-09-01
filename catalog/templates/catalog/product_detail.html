@@ -1,5 +1,6 @@
 {% extends 'base.html' %}
 {% load static %}
+{% load cache %}
 
 {% block title %}{{ object.name }}{% endblock %}
 
@@ -8,6 +9,7 @@
 {% endblock %}
 
 {% block content %}
+{% cache 300 product_detail object.pk object.updated_at.timestamp %}
 <div class="row">
     <div class="col-md-4">
         {% if object.image %}
@@ -86,7 +88,9 @@
                 <p><strong>Создан:</strong> {{object.created_at|date:"d.m.Y H:i"}}</p>
             </div>
         </div>
+        {% endcache %}
 
+        <!-- Динамический контент (не кешируется) -->
         <div class="btn-group mb-3">
             <!-- Проверка права на изменение продукта + проверка владельца -->
             {% if perms.catalog.change_product and object.owner == user or perms.catalog.can_change_publication_status %}

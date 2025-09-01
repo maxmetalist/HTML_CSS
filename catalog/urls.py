@@ -1,4 +1,5 @@
 from django.urls import path
+from django.views.decorators.cache import cache_page
 
 from catalog.apps import CatalogConfig
 from catalog.views import (
@@ -12,7 +13,8 @@ from catalog.views import (
     ProductCreateView,
     ProductUpdateView,
     ProductDeleteView, ProductUnpublishView, ProductModerationListView, ProductModerationDashboard, ProductPublishView,
-    ProductChangeStatusView, MassUnpublishView,
+    ProductChangeStatusView, MassUnpublishView, CategoryProductsView, CategoryListView,
+    CategoryAdminListView, CategoryProductsSearchView,
 )
 
 app_name = CatalogConfig.name
@@ -23,7 +25,7 @@ urlpatterns = [
     path("catalog/", CatalogView.as_view(), name="catalog"),
     path("contacts_success/<str:name>/", ContactsSuccessView.as_view(), name="contacts_success"),
     path("our_contacts/", OurContactsView.as_view(), name="our_contacts"),
-    path("product/<int:pk>/", ProductDetailView.as_view(), name="product_detail"),
+    path("product/<int:pk>/", cache_page(60)(ProductDetailView.as_view()), name="product_detail"),
     path("product/", ProductListView.as_view(), name="product_list"),
     path("product/create/", ProductCreateView.as_view(), name="product_create"),
     path("product/<int:pk>/update/", ProductUpdateView.as_view(), name="product_update"),
@@ -34,4 +36,8 @@ urlpatterns = [
     path('product/<int:pk>/change-status/', ProductChangeStatusView.as_view(), name='product_change_status'),
     path('moderation/', ProductModerationListView.as_view(), name='product_moderation'),
     path('moderation/dashboard/', ProductModerationDashboard.as_view(), name='moderation_dashboard'),
+    path('category-products/', CategoryProductsSearchView.as_view(), name='category_products'),
+    path('category/<slug:category_slug>/', CategoryProductsView.as_view(), name='category_detail'),
+    path('categories/', CategoryListView.as_view(), name='categories'),
+    path('categories/admin/', CategoryAdminListView.as_view(), name='categories_admin'),
 ]
