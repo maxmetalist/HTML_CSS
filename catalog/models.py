@@ -8,8 +8,6 @@ User = get_user_model()
 class Category(models.Model):
     """Модель категории товаров"""
 
-    DoesNotExist = None
-    objects = None
     name = models.CharField(max_length=100, verbose_name="Наименование")
     description = models.TextField(verbose_name="Описание", blank=True, null=True)
     slug = models.SlugField(max_length=100, unique=True, verbose_name="URL", blank=True, null=True)

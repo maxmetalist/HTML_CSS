@@ -118,7 +118,7 @@
     <!-- Сетка продуктов -->
     <div id="products-container">
         <div class="row">
-            {% for product in products_page %}
+            {% for product in products %}
             <div class="col-md-4 mb-4">
                 <div class="card product-card h-100">
                     {% if product.image %}
@@ -166,7 +166,7 @@
 
                     <div class="card-footer">
                         <small class="text-muted">
-                            Категория: <a href="{% url 'catalog:category_products' product.category.slug %}">{{ product.category.name }}</a>
+                            Категория: <a href="{% url 'catalog:category_detail' product.category.slug %}">{{ product.category.name }}</a>
                         </small>
                     </div>
                 </div>

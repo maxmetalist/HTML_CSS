@@ -184,7 +184,7 @@ class ProductCreateView(LoginRequiredMixin, PermissionRequiredMixin, CreateView)
     model = Product
     form_class = ProductForm
     template_name = "catalog/product_form.html"
-    success_url = reverse_lazy("product_list")
+    success_url = reverse_lazy("catalog:product_list")
     permission_required = 'catalog.add_product'
     raise_exception = True
 
@@ -208,7 +208,7 @@ class ProductUpdateView(LoginRequiredMixin, PermissionRequiredMixin, UpdateView)
     raise_exception = True
 
     def get_success_url(self):
-        return reverse_lazy("product_detail", kwargs={"pk": self.object.pk})
+        return reverse_lazy("catalog:product_detail", kwargs={"pk": self.object.pk})
 
     def get_form(self, form_class=None):
         form = super().get_form(form_class)
@@ -223,7 +223,7 @@ class ProductDeleteView(LoginRequiredMixin, OwnerOrModeratorRequiredMixin,  Dele
     login_url = "/users/login/"
     model = Product
     template_name = "catalog/product_confirm_delete.html"
-    success_url = reverse_lazy("product_list")
+    success_url = reverse_lazy("catalog:product_list")
     context_object_name = "product"
 
 
